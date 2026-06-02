@@ -2100,6 +2100,50 @@ body.quizPageOpen #messageBox{
       }
     }
 
+
+    /* ===== FINAL SHINE POSITION + SIMPLE USE ===== */
+    #shineBtn{
+      position:fixed !important;
+      display:none;
+      left:50% !important;
+      right:auto !important;
+      bottom:calc(54px + var(--safeBottom)) !important;
+      transform:translateX(-50%) !important;
+      z-index:16 !important;
+      width:118px !important;
+      height:54px !important;
+      border-radius:18px !important;
+      font-size:14px !important;
+      line-height:1.05 !important;
+      padding:5px 12px !important;
+      color:#3b2202 !important;
+      font-weight:1000 !important;
+      background:linear-gradient(180deg,#fff7b8,#facc15) !important;
+      border:3px solid rgba(255,255,255,.65) !important;
+      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
+      cursor:pointer;
+      touch-action:manipulation;
+      pointer-events:auto;
+      will-change:auto !important;
+    }
+    #shineBtn:active{
+      transform:translateX(-50%) !important;
+      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
+    }
+    @media(max-width:760px){
+      #shineBtn{
+        left:50% !important;
+        right:auto !important;
+        bottom:calc(45px + var(--safeBottom)) !important;
+        transform:translateX(-50%) !important;
+        width:108px !important;
+        height:50px !important;
+        font-size:12px !important;
+        border-radius:16px !important;
+      }
+      #shineBtn:active{ transform:translateX(-50%) !important; }
+    }
+
 </style>
 </head>
 
@@ -2160,7 +2204,7 @@ body.quizPageOpen #messageBox{
 
   <div id="helpCard">
     <b>Desktop:</b> WASD to move. Arrow keys or drag to look. Press <b>E</b> to inspect.<br>
-    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. Use SHINE in C3. It is very forgiving — press SHINE in the scarab chamber to light the next scarab. Use CAST with the Magic Wand in C5.
+    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. Use SHINE in C3. Just press SHINE in the scarab chamber to activate the next scarab. Use CAST with the Magic Wand in C5.
   </div>
 
   <div id="buttonsTopRight">
@@ -3425,8 +3469,9 @@ const wrap = document.getElementById("gameWrap");
       if(scarabLightedCount >= 6){
         openThirdDoor();
       }else{
-        showMessage(`Scarab symbol ${scarabLightedCount} of 6 is lit. Shine on the next green scarab.`);
+        showMessage(`Scarab symbol ${scarabLightedCount} of 6 is lit. Press SHINE for the next scarab.`);
       }
+      saveProgress();
     }
 
     function randomQuestionForScarab(){
@@ -3474,47 +3519,6 @@ function showLightBeam(){
       return scarabs.find(s => s && s.alive && !scarabChallengeDone.has(s.idx)) || null;
     }
 
-    function findEasyScarabTarget(){
-      const live = scarabs.filter(s => s && s.alive && !scarabChallengeDone.has(s.idx));
-      if(!live.length) return null;
-
-      let best = null;
-      let bestScore = Infinity;
-
-      for(const s of live){
-        const pos = s.group.position.clone();
-        pos.y += 1.0;
-        const projected = pos.clone().project(camera);
-
-        // Allow a very broad visible area, not just the centre dot.
-        if(projected.z < -1.2 || projected.z > 1.2) continue;
-
-        const sx = (projected.x * .5 + .5) * window.innerWidth;
-        const sy = (-projected.y * .5 + .5) * window.innerHeight;
-        const centreDist = Math.hypot(sx - window.innerWidth / 2, sy - window.innerHeight / 2);
-        const worldDist = s.group.position.distanceTo(camera.position);
-        const score = centreDist + worldDist * 8;
-
-        if(score < bestScore){
-          bestScore = score;
-          best = {obj:s, centreDist, worldDist, projected};
-        }
-      }
-
-      if(!best) return null;
-
-      // EXTREMELY WIDE tolerance:
-      // If the scarab is anywhere reasonably visible, or the pupil is in the chamber, accept it.
-      const screenAllowance = Math.min(window.innerWidth, window.innerHeight) * .85;
-      const closeAllowance = 18.0;
-
-      if(best.centreDist < screenAllowance || best.worldDist < closeAllowance){
-        return best.obj;
-      }
-
-      return null;
-    }
-
     function shineScarab(){
       if(modalShade.style.display !== "none") return;
       if(!isInScarabChamber()){
@@ -3525,35 +3529,17 @@ function showLightBeam(){
       unlockAudio();
       showLightBeam();
 
-      // 1. Exact raycast still works.
-      raycaster.setFromCamera(aimNdc,camera);
-      const aliveMeshes = scarabMeshes.filter(m => {
-        const idx = m.userData.scarabIndex;
-        return scarabs[idx] && scarabs[idx].alive && window.secondDoorOpen && topazCollected;
-      });
-      const hits = raycaster.intersectObjects(aliveMeshes,false);
-      if(hits.length){
-        openScarabQuestion(hits[0].object.userData.scarabIndex);
-        return;
-      }
-
-      // 2. Broad visible/near target.
-      const easyTarget = findEasyScarabTarget();
-      if(easyTarget){
-        openScarabQuestion(easyTarget.idx);
-        return;
-      }
-
-      // 3. Ultra-forgiving fallback:
-      // Once the player is in Chamber 3, SHINE will activate the next unlit scarab.
-      // This removes aiming frustration on mobile screens.
+      // Ultra-wide tolerance:
+      // In Chamber 3, pressing SHINE selects the next unlit scarab automatically.
+      // This removes aiming frustration on mobile devices.
       const nextObj = nextUnlitScarab();
       if(nextObj){
         openScarabQuestion(nextObj.idx);
         return;
       }
 
-      showMessage("All scarabs here are already lit.");
+      showMessage("All 6 scarabs are already lit. The bridge door is open.");
+      if(!window.thirdDoorOpen) openThirdDoor();
     }
 
     function isInVillagerChamber(){
@@ -4379,11 +4365,16 @@ function openPuzzle(){
     function openThirdDoor(){
       if(window.thirdDoorOpen) return;
       window.thirdDoorOpen = true;
-      if(window.thirdDoor) window.thirdDoor.active = false;
+      if(window.thirdDoor){
+        window.thirdDoor.active = false;
+        // Raise immediately so pupils can clearly proceed to the bridge.
+        if(window.thirdDoor.mesh) window.thirdDoor.mesh.position.y = 5.2;
+      }
       emeraldVisible = true;
-      window.emeraldObj.group.visible = true;
-      showMessage("All 6 scarabs are lighted! The emerald door opens. Collect the Emerald of Hundreds.");
+      if(window.emeraldObj) window.emeraldObj.group.visible = true;
+      showMessage("All 6 scarabs are lit! The bridge door is open. Collect the Emerald of Hundreds, then cross the bridge.");
       playStoneMove();
+      playVictory();
       saveProgress();
     }
 
@@ -5374,7 +5365,16 @@ function openPuzzle(){
             }
           }, 650);
         }else if(activeQuizMode === "scarab"){
-          setFeedback("ok", `<b>Correct.</b> Press <b>Next</b> to light up this scarab symbol.`);
+          setFeedback("ok", `<b>Correct.</b> Lighting this scarab symbol...`);
+          const solvedScarabIndex = activeScarabIndex;
+          setTimeout(()=>{
+            if(activeQuizMode === "scarab" && activeScarabIndex === solvedScarabIndex){
+              closePuzzle();
+              activateScarab(solvedScarabIndex);
+              activeScarabIndex = null;
+              activeQuizMode = "starting";
+            }
+          }, 650);
         }else if(activeQuizMode === "sand"){
           setFeedback("ok", `<b>Correct.</b> Taking this bridge step...`);
           const solvedSandIndex = activeSandIndex;
