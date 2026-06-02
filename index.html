@@ -1848,31 +1848,136 @@ body.quizPageOpen #messageBox{
     function addTablet(){
       const group = new THREE.Group();
       group.position.set(0,0,-6.1);
-      const base = new THREE.Mesh(new THREE.BoxGeometry(2.55,1.72,.24), matTablet);
-      base.position.y = 1.05;
+      const base = new THREE.Mesh(new THREE.BoxGeometry(3.65,2.35,.30), matTablet);
+      base.position.y = 1.18;
       base.castShadow = !LOW_POWER;
       base.receiveShadow = !LOW_POWER;
       group.add(base);
 
       const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.24,0), matGlow);
-      gem.position.set(0,1.52,-.18);
+      gem.position.set(0,2.58,-.22);
       group.add(gem);
 
       const canvas = document.createElement("canvas");
-      canvas.width = 512; canvas.height = 300;
+      canvas.width = 1024; canvas.height = 640;
       const ctx = canvas.getContext("2d");
-      ctx.clearRect(0,0,512,300);
-      ctx.fillStyle = "#ffd86b"; ctx.textAlign = "center";
-      ctx.font = "bold 48px serif"; ctx.fillText("𓂀 MULTIPLY 𓂀",256,88);
-      ctx.font = "bold 34px serif"; ctx.fillText("JEWEL LOCK",256,155);
-      ctx.font = "bold 28px serif"; ctx.fillText("INSPECT TO SOLVE",256,215);
+
+      // VERY prominent gold instruction plaque on the tablet.
+      ctx.clearRect(0,0,1024,640);
+
+      const bg = ctx.createLinearGradient(0,0,0,640);
+      bg.addColorStop(0,"#7a4308");
+      bg.addColorStop(.35,"#351604");
+      bg.addColorStop(1,"#070201");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0,0,1024,640);
+
+      // Thick glowing gold frame.
+      ctx.shadowColor = "rgba(255,216,107,1)";
+      ctx.shadowBlur = 30;
+      ctx.strokeStyle = "#ffe58a";
+      ctx.lineWidth = 24;
+      ctx.strokeRect(34,34,956,572);
+      ctx.shadowBlur = 0;
+
+      // Inner black panel for contrast.
+      ctx.fillStyle = "rgba(0,0,0,.46)";
+      ctx.fillRect(70,88,884,450);
+      ctx.strokeStyle = "#ffd86b";
+      ctx.lineWidth = 10;
+      ctx.strokeRect(70,88,884,450);
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+
+      function hugeGoldText(text, y, size){
+        ctx.font = "1000 " + size + "px Georgia, 'Times New Roman', serif";
+        ctx.shadowColor = "rgba(255,216,107,1)";
+        ctx.shadowBlur = 32;
+
+        // Very thick dark outline.
+        ctx.lineWidth = Math.max(14, Math.round(size * 0.18));
+        ctx.strokeStyle = "#050100";
+        ctx.strokeText(text,512,y);
+
+        // Thin bright outer outline.
+        ctx.lineWidth = Math.max(5, Math.round(size * 0.06));
+        ctx.strokeStyle = "#fff6b8";
+        ctx.strokeText(text,512,y);
+
+        const gold = ctx.createLinearGradient(0,y-size/2,0,y+size/2);
+        gold.addColorStop(0,"#ffffff");
+        gold.addColorStop(.18,"#fff6b8");
+        gold.addColorStop(.45,"#ffd86b");
+        gold.addColorStop(.75,"#e09b24");
+        gold.addColorStop(1,"#8d4b04");
+        ctx.fillStyle = gold;
+        ctx.fillText(text,512,y);
+
+        ctx.shadowBlur = 0;
+      }
+
+      hugeGoldText("FIND ME", 210, 112);
+      hugeGoldText("THE PRODUCT!", 355, 104);
+
+      ctx.font = "1000 42px Georgia, 'Times New Roman', serif";
+      ctx.lineWidth = 9;
+      ctx.strokeStyle = "#050100";
+      ctx.strokeText("TAP / INSPECT THE TABLET",512,500);
+      ctx.fillStyle = "#ffeaa0";
+      ctx.fillText("TAP / INSPECT THE TABLET",512,500);
+
       const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const face = new THREE.Mesh(new THREE.PlaneGeometry(2.25,1.25), new THREE.MeshStandardMaterial({map:tex,transparent:true,emissive:0xffbb3e,emissiveIntensity:.35}));
-      face.position.set(0,1.18,-.132);
+      tex.needsUpdate = true;
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      else if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+
+      const face = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.45,2.08),
+        new THREE.MeshBasicMaterial({map:tex,transparent:false,side:THREE.DoubleSide})
+      );
+      face.position.set(0,1.23,-.172);
+      face.renderOrder = 20;
       group.add(face);
 
-      const glowLight = new THREE.PointLight(0xffcf65, LOW_POWER ? 0.9 : 1.1, 4.5, 2);
+      // Extra floating gold instruction above the tablet so pupils cannot miss it.
+      const signCanvas = document.createElement("canvas");
+      signCanvas.width = 1024; signCanvas.height = 260;
+      const sctx = signCanvas.getContext("2d");
+      sctx.clearRect(0,0,1024,260);
+      sctx.textAlign = "center";
+      sctx.textBaseline = "middle";
+      sctx.font = "1000 82px Georgia, 'Times New Roman', serif";
+      sctx.shadowColor = "rgba(255,216,107,1)";
+      sctx.shadowBlur = 26;
+      sctx.lineWidth = 16;
+      sctx.strokeStyle = "#090300";
+      sctx.strokeText("FIND THE PRODUCT!",512,130);
+      const sgold = sctx.createLinearGradient(0,70,0,180);
+      sgold.addColorStop(0,"#fff6b8");
+      sgold.addColorStop(.45,"#ffd86b");
+      sgold.addColorStop(1,"#c47411");
+      sctx.fillStyle = sgold;
+      sctx.fillText("FIND THE PRODUCT!",512,130);
+
+      const signTex = new THREE.CanvasTexture(signCanvas);
+      signTex.needsUpdate = true;
+      if (THREE.SRGBColorSpace) signTex.colorSpace = THREE.SRGBColorSpace;
+      else if (THREE.sRGBEncoding) signTex.encoding = THREE.sRGBEncoding;
+
+      const floatingSign = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.35,1.1),
+        new THREE.MeshBasicMaterial({map:signTex,transparent:true,side:THREE.DoubleSide,depthWrite:false})
+      );
+      floatingSign.position.set(0,3.05,-.28);
+      floatingSign.renderOrder = 30;
+      group.add(floatingSign);
+
+      animated.push({type:"floatingTabletSign",mesh:floatingSign,t:0});
+
+
+      const glowLight = new THREE.PointLight(0xffcf65, LOW_POWER ? 1.8 : 2.4, 7.5, 1.7);
       glowLight.position.set(0,1.3,-.35);
       group.add(glowLight);
 
@@ -2173,8 +2278,13 @@ body.quizPageOpen #messageBox{
         }
         if(a.type==="tabletGem"){
           a.mesh.rotation.y += dt*1.25;
-          a.mesh.position.y = 1.52 + Math.sin(elapsed*2.2)*.05;
-          a.light.intensity = .85 + Math.sin(elapsed*3)*.22;
+          a.mesh.position.y = 2.58 + Math.sin(elapsed*2.2)*.06;
+          a.light.intensity = 1.7 + Math.sin(elapsed*3)*.35;
+        }
+        if(a.type==="floatingTabletSign"){
+          a.mesh.position.y = 3.05 + Math.sin(elapsed*2.4)*.08;
+          const pulse = 1 + Math.sin(elapsed*3.2)*.035;
+          a.mesh.scale.set(pulse,pulse,1);
         }
         if(a.type==="ruby" && a.group.visible){
           a.group.position.y = 1.05 + Math.sin(elapsed*2)*.14;
