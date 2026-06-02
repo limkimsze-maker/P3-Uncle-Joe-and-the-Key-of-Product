@@ -2335,6 +2335,7 @@ const wrap = document.getElementById("gameWrap");
     const raycaster = new THREE.Raycaster();
     const aimNdc = new THREE.Vector2(0,0);
     let currentTarget = null;
+    var TORCH_TOTAL = 6;
 
     const SAVE_KEY = "p3_multiply_egyptian_maze_progress_v1";
     let progressLoaded = false;
@@ -4694,7 +4695,6 @@ function openPuzzle(){
     }
 
     const QUESTIONS_PER_STAGE = 6;
-    const TORCH_TOTAL = 6;
     const TOTAL_QUESTIONS = STAGES.length * QUESTIONS_PER_STAGE;
 
     let quiz = { stageIndex:0, questionInStage:1, solvedTotal:0, questionComplete:false };
@@ -4938,7 +4938,7 @@ function openPuzzle(){
       }else if(activeQuizMode === "scarab"){
         $("stageHudText").textContent = `3 / 5`;
         $("quizHudText").textContent = `${scarabLightedCount + 1} / 6`;
-        $("stageNameText").textContent = `Stage 3: Scarab Puzzle Chamber — 3d × 1d, no regrouping`;
+        $("stageNameText").textContent = `Stage 3: Scarab Puzzle Chamber — varied 3d × 1d`;
         $("progressText").textContent = `Scarab ${scarabLightedCount + 1} of 6`;
       }else if(activeQuizMode === "sand"){
         $("stageHudText").textContent = `4 / 5`;
@@ -5469,4 +5469,4 @@ function openPuzzle(){
   })();
   </script>
 </body>
-  </html>
+          </html>
