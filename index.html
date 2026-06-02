@@ -2053,101 +2053,6 @@ body.quizPageOpen #messageBox{
       font-weight:900;
     }
 
-
-    /* ===== FIXED SHINE BUTTON POSITION =====
-       Stays above the jewel row; does not shift when pressed. */
-    #shineBtn{
-      position:fixed !important;
-      display:none;
-      left:50% !important;
-      right:auto !important;
-      bottom:calc(54px + var(--safeBottom)) !important;
-      transform:translateX(-50%) !important;
-      z-index:16 !important;
-      width:112px !important;
-      height:56px !important;
-      border-radius:18px !important;
-      font-size:15px !important;
-      line-height:1.05 !important;
-      padding:5px 12px !important;
-      color:#3b2202 !important;
-      font-weight:1000 !important;
-      background:linear-gradient(180deg,#fff7b8,#facc15) !important;
-      border:3px solid rgba(255,255,255,.65) !important;
-      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
-      cursor:pointer;
-      touch-action:manipulation;
-      pointer-events:auto;
-      will-change:auto !important;
-    }
-    #shineBtn:active{
-      transform:translateX(-50%) !important;
-      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
-    }
-    @media(max-width:760px){
-      #shineBtn{
-        left:50% !important;
-        right:auto !important;
-        bottom:calc(45px + var(--safeBottom)) !important;
-        transform:translateX(-50%) !important;
-        width:104px !important;
-        height:50px !important;
-        font-size:13px !important;
-        border-radius:16px !important;
-      }
-      #shineBtn:active{
-        transform:translateX(-50%) !important;
-      }
-    }
-
-
-    /* ===== FINAL SHINE POSITION + SIMPLE USE ===== */
-    #shineBtn{
-      position:fixed !important;
-      display:none;
-      left:50% !important;
-      right:auto !important;
-      bottom:calc(54px + var(--safeBottom)) !important;
-      transform:translateX(-50%) !important;
-      z-index:16 !important;
-      width:118px !important;
-      height:54px !important;
-      border-radius:18px !important;
-      font-size:14px !important;
-      line-height:1.05 !important;
-      padding:5px 12px !important;
-      color:#3b2202 !important;
-      font-weight:1000 !important;
-      background:linear-gradient(180deg,#fff7b8,#facc15) !important;
-      border:3px solid rgba(255,255,255,.65) !important;
-      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
-      cursor:pointer;
-      touch-action:manipulation;
-      pointer-events:auto;
-      will-change:auto !important;
-    }
-    #shineBtn:active{
-      transform:translateX(-50%) !important;
-      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
-    }
-    @media(max-width:760px){
-      #shineBtn{
-        left:50% !important;
-        right:auto !important;
-        bottom:calc(45px + var(--safeBottom)) !important;
-        transform:translateX(-50%) !important;
-        width:108px !important;
-        height:50px !important;
-        font-size:12px !important;
-        border-radius:16px !important;
-      }
-      #shineBtn:active{ transform:translateX(-50%) !important; }
-    }
-
-
-    /* Prompt-based C3/C5: no shooting buttons. */
-    #shineBtn,#wandBtn{display:none !important; visibility:hidden !important; pointer-events:none !important;}
-
 </style>
 </head>
 
@@ -2208,7 +2113,7 @@ body.quizPageOpen #messageBox{
 
   <div id="helpCard">
     <b>Desktop:</b> WASD to move. Arrow keys or drag to look. Press <b>E</b> to inspect.<br>
-    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. In C3 and C5, walk near the next target and press the prompt to answer.
+    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. Use SHINE in C3. Use CAST with the Magic Wand in C5.
   </div>
 
   <div id="buttonsTopRight">
@@ -2430,7 +2335,6 @@ const wrap = document.getElementById("gameWrap");
     const raycaster = new THREE.Raycaster();
     const aimNdc = new THREE.Vector2(0,0);
     let currentTarget = null;
-    var TORCH_TOTAL = 6;
 
     const SAVE_KEY = "p3_multiply_egyptian_maze_progress_v1";
     let progressLoaded = false;
@@ -3119,7 +3023,7 @@ const wrap = document.getElementById("gameWrap");
       // Invisible hit target for wand shooting. It follows the villager and is easier
       // to raycast than the imported GLB mesh.
       const hit = new THREE.Mesh(
-        new THREE.SphereGeometry(1.5,24,16),
+        new THREE.SphereGeometry(.92,16,10),
         new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
       );
       hit.position.y = 1.25;
@@ -3133,8 +3037,8 @@ const wrap = document.getElementById("gameWrap");
         id,
         group,
         position:new THREE.Vector3(x,1.1,z),
-        radius:4.2,
-        label:`Help Villager ${idx+1}`
+        radius:3.0,
+        label:`Cast spell on Villager ${idx+1}`
       });
 
       const obj = {idx,group,holder,emojiPlane,aura,ring,label,light,base,freed:false};
@@ -3442,13 +3346,6 @@ const wrap = document.getElementById("gameWrap");
       scarabs[idx] = scarab;
       scarabMeshes.push(body);
       body.userData.scarabIndex = idx;
-      interactables.push({
-        id:"scarabBtn" + idx,
-        group,
-        position:new THREE.Vector3(x,1.0,z),
-        radius:4.2,
-        label:`Solve scarab ${idx+1} question`
-      });
       animated.push({type:"scarab",obj:scarab,t:Math.random()*10});
       return scarab;
     }
@@ -3480,9 +3377,8 @@ const wrap = document.getElementById("gameWrap");
       if(scarabLightedCount >= 6){
         openThirdDoor();
       }else{
-        showMessage(`Scarab ${scarabLightedCount} of 6 is lit. Walk near the next scarab and press the prompt.`);
+        showMessage(`Scarab symbol ${scarabLightedCount} of 6 is lit. Shine on the next green scarab.`);
       }
-      saveProgress();
     }
 
     function randomQuestionForScarab(){
@@ -3502,7 +3398,7 @@ const wrap = document.getElementById("gameWrap");
     function updateShineButtonVisibility(){
       const btn = document.getElementById("shineBtn");
       if(!btn) return;
-      btn.style.display = "none";
+      btn.style.display = isInScarabChamber() ? "block" : "none";
     }
 
 function showLightBeam(){
@@ -3514,8 +3410,27 @@ function showLightBeam(){
       setTimeout(()=>beam.classList.remove("show"),520);
     }
 
-    function openScarabQuestion(idx){
-      if(idx == null || scarabChallengeDone.has(idx)) return;
+    function shineScarab(){
+      if(modalShade.style.display !== "none") return;
+      if(!isInScarabChamber()){
+        showMessage("SHINE is only used in the Scarab Puzzle Chamber.");
+        return;
+      }
+      unlockAudio();
+      showLightBeam();
+      raycaster.setFromCamera(aimNdc,camera);
+      const aliveMeshes = scarabMeshes.filter(m => {
+        const idx = m.userData.scarabIndex;
+        return scarabs[idx] && scarabs[idx].alive && window.secondDoorOpen && topazCollected;
+      });
+      const hits = raycaster.intersectObjects(aliveMeshes,false);
+      if(!hits.length){
+        showMessage("Aim the centre dot at a green scarab symbol, then press SHINE.");
+        playWrong();
+        return;
+      }
+      const idx = hits[0].object.userData.scarabIndex;
+      if(scarabChallengeDone.has(idx)) return;
       activeQuizMode = "scarab";
       activeScarabIndex = idx;
       quiz.stageIndex = 0;
@@ -3524,33 +3439,6 @@ function showLightBeam(){
       loadQuestion(randomQuestionForScarab());
       openPuzzle();
       setFeedback("hint","Scarab Puzzle Chamber: solve this varied 3-digit × 1-digit question to light the scarab symbol.");
-    }
-
-    function nextUnlitScarab(){
-      return scarabs.find(s => s && s.alive && !scarabChallengeDone.has(s.idx)) || null;
-    }
-
-    function shineScarab(){
-      if(modalShade.style.display !== "none") return;
-      if(!isInScarabChamber()){
-        showMessage("SHINE is only used in the Scarab Puzzle Chamber.");
-        return;
-      }
-
-      unlockAudio();
-      showLightBeam();
-
-      // Ultra-wide tolerance:
-      // In Chamber 3, pressing SHINE selects the next unlit scarab automatically.
-      // This removes aiming frustration on mobile devices.
-      const nextObj = nextUnlitScarab();
-      if(nextObj){
-        openScarabQuestion(nextObj.idx);
-        return;
-      }
-
-      showMessage("All 6 scarabs are already lit. The bridge door is open.");
-      if(!window.thirdDoorOpen) openThirdDoor();
     }
 
     function isInVillagerChamber(){
@@ -3566,8 +3454,7 @@ function showLightBeam(){
     function updateWandButtonVisibility(){
       const btn = document.getElementById("wandBtn");
       if(!btn) return;
-      btn.classList.remove("show");
-      btn.style.display = "none";
+      btn.classList.toggle("show", isInVillagerChamber());
     }
 
     function showWandBeam(){
@@ -3596,11 +3483,53 @@ function showLightBeam(){
       quiz.solvedTotal = 0;
       loadQuestion(randomQuestionForVillager());
       openPuzzle();
-      setFeedback("hint", `Spellbound Villagers Hall: solve this regrouping question to free Villager ${idx+1}.`);
+      setFeedback("hint", `Spellbound Villagers Hall: use the Magic Wand and solve this regrouping question to free Villager ${idx+1}.`);
     }
 
     function castWandAtVillager(){
-      showMessage("In Chamber 5, walk near the next villager and press the prompt to help them.");
+      if(modalShade.style.display !== "none") return;
+      if(!isInVillagerChamber()){
+        showMessage("The Magic Wand is used in the Spellbound Villagers Hall.");
+        return;
+      }
+
+      unlockAudio();
+      showWandBeam();
+      raycaster.setFromCamera(aimNdc,camera);
+
+      const activeMeshes = villagerMeshes.filter(m => {
+        if(!m) return false;
+        const idx = m.userData.villagerIndex;
+        return villagers[idx] && !villagerChallengeDone.has(idx) && idx === villagerChallengeDone.size;
+      });
+
+      const hits = raycaster.intersectObjects(activeMeshes,false);
+      if(hits.length){
+        const idx = hits[0].object.userData.villagerIndex;
+        openVillagerQuestion(idx);
+        return;
+      }
+
+      // Mobile fallback: if the next villager is near the centre of the screen,
+      // still allow the spell to work.
+      const nextIdx = villagerChallengeDone.size;
+      const obj = villagers[nextIdx];
+      if(obj && obj.group){
+        const pos = obj.group.position.clone();
+        pos.y += 1.25;
+        const projected = pos.clone().project(camera);
+        const sx = (projected.x * .5 + .5) * window.innerWidth;
+        const sy = (-projected.y * .5 + .5) * window.innerHeight;
+        const dist = Math.hypot(sx - window.innerWidth/2, sy - window.innerHeight/2);
+        const worldDist = obj.group.position.distanceTo(camera.position);
+        if(projected.z > -1 && projected.z < 1 && (dist < Math.min(window.innerWidth,window.innerHeight)*.24 || worldDist < 4.2)){
+          openVillagerQuestion(nextIdx);
+          return;
+        }
+      }
+
+      showMessage("Aim the centre dot at the next spellbound villager, then press CAST.");
+      playWrong();
     }
 
 function addHieroglyphPanel(x,z,rotY,text){
@@ -4076,7 +4005,8 @@ function addTablet(){
       if(e.key==="ArrowDown") moveKeys.lookDown=true;
       if(k==="e") tryInteract();
       if(e.code==="Space"){
-        // C3 and C5 now use near-object prompts, not shooting.
+        if(isInVillagerChamber()) castWandAtVillager();
+        else shineScarab();
         e.preventDefault();
       }
       if(k==="escape") closePuzzle();
@@ -4176,10 +4106,6 @@ function addTablet(){
           const idx = Number(String(item.id).replace("torchBtn",""));
           if(!doorOpen || torchChallengeDone.has(idx) || idx !== torchChallengeDone.size) continue;
         }
-        if(String(item.id || "").startsWith("scarabBtn")){
-          const idx = Number(String(item.id).replace("scarabBtn",""));
-          if(!window.secondDoorOpen || !topazCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
-        }
         if(String(item.id || "").startsWith("sandBtn")){
           const idx = Number(String(item.id).replace("sandBtn",""));
           if(!window.thirdDoorOpen || sandChallengeDone.has(idx) || idx !== sandChallengeDone.size) continue;
@@ -4239,25 +4165,6 @@ function addTablet(){
         openPuzzle();
         setFeedback("hint", "Torch Corridor: solve this 2-digit × 1-digit question to light one torch.");
       }
-      if(String(currentTarget.id || "").startsWith("scarabBtn")){
-        const idx = Number(String(currentTarget.id).replace("scarabBtn",""));
-        if(scarabChallengeDone.has(idx)){
-          showMessage("This scarab is already lit. Proceed to the next scarab.");
-          return;
-        }
-        if(idx !== scarabChallengeDone.size){
-          showMessage(`Go to Scarab ${scarabChallengeDone.size + 1} first.`);
-          return;
-        }
-        activeQuizMode = "scarab";
-        activeScarabIndex = idx;
-        quiz.stageIndex = 0;
-        quiz.questionInStage = 1;
-        quiz.solvedTotal = 0;
-        loadQuestion(randomQuestionForScarab());
-        openPuzzle();
-        setFeedback("hint", "Scarab Puzzle Chamber: solve this 3-digit × 1-digit question to light one scarab.");
-      }
       if(String(currentTarget.id || "").startsWith("sandBtn")){
         const idx = Number(String(currentTarget.id).replace("sandBtn",""));
         if(sandChallengeDone.has(idx)){
@@ -4279,14 +4186,6 @@ function addTablet(){
       }
       if(String(currentTarget.id || "").startsWith("villagerBtn")){
         const idx = Number(String(currentTarget.id).replace("villagerBtn",""));
-        if(villagerChallengeDone.has(idx)){
-          showMessage("This villager is already free. Proceed to the next villager.");
-          return;
-        }
-        if(idx !== villagerChallengeDone.size){
-          showMessage(`Go to Villager ${villagerChallengeDone.size + 1} first.`);
-          return;
-        }
         openVillagerQuestion(idx);
       }
     }
@@ -4365,15 +4264,11 @@ function openPuzzle(){
     function openThirdDoor(){
       if(window.thirdDoorOpen) return;
       window.thirdDoorOpen = true;
-      if(window.thirdDoor){
-        window.thirdDoor.active = false;
-        if(window.thirdDoor.mesh) window.thirdDoor.mesh.position.y = 5.2;
-      }
+      if(window.thirdDoor) window.thirdDoor.active = false;
       emeraldVisible = true;
-      if(window.emeraldObj) window.emeraldObj.group.visible = true;
-      showMessage("All 6 scarabs are lit! The bridge door is open. Collect the Emerald of Hundreds, then cross the bridge.");
+      window.emeraldObj.group.visible = true;
+      showMessage("All 6 scarabs are lighted! The emerald door opens. Collect the Emerald of Hundreds.");
       playStoneMove();
-      playVictory();
       saveProgress();
     }
 
@@ -4799,6 +4694,7 @@ function openPuzzle(){
     }
 
     const QUESTIONS_PER_STAGE = 6;
+    const TORCH_TOTAL = 6;
     const TOTAL_QUESTIONS = STAGES.length * QUESTIONS_PER_STAGE;
 
     let quiz = { stageIndex:0, questionInStage:1, solvedTotal:0, questionComplete:false };
@@ -5042,7 +4938,7 @@ function openPuzzle(){
       }else if(activeQuizMode === "scarab"){
         $("stageHudText").textContent = `3 / 5`;
         $("quizHudText").textContent = `${scarabLightedCount + 1} / 6`;
-        $("stageNameText").textContent = `Stage 3: Scarab Puzzle Chamber — varied 3d × 1d`;
+        $("stageNameText").textContent = `Stage 3: Scarab Puzzle Chamber — 3d × 1d, no regrouping`;
         $("progressText").textContent = `Scarab ${scarabLightedCount + 1} of 6`;
       }else if(activeQuizMode === "sand"){
         $("stageHudText").textContent = `4 / 5`;
@@ -5364,16 +5260,7 @@ function openPuzzle(){
             }
           }, 650);
         }else if(activeQuizMode === "scarab"){
-          setFeedback("ok", `<b>Correct.</b> Lighting this scarab...`);
-          const solvedScarabIndex = activeScarabIndex;
-          setTimeout(()=>{
-            if(activeQuizMode === "scarab" && activeScarabIndex === solvedScarabIndex){
-              closePuzzle();
-              activateScarab(solvedScarabIndex);
-              activeScarabIndex = null;
-              activeQuizMode = "starting";
-            }
-          }, 650);
+          setFeedback("ok", `<b>Correct.</b> Press <b>Next</b> to light up this scarab symbol.`);
         }else if(activeQuizMode === "sand"){
           setFeedback("ok", `<b>Correct.</b> Taking this bridge step...`);
           const solvedSandIndex = activeSandIndex;
@@ -5384,7 +5271,7 @@ function openPuzzle(){
             }
           }, 650);
         }else if(activeQuizMode === "villager"){
-          setFeedback("ok", `<b>Correct.</b> Freeing this villager...`);
+          setFeedback("ok", `<b>Correct.</b> Casting the wand spell...`);
           const solvedVillagerIndex = activeVillagerIndex;
           setTimeout(()=>{
             if(activeQuizMode === "villager" && activeVillagerIndex === solvedVillagerIndex){
