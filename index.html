@@ -1074,6 +1074,267 @@
   }
 }
 
+
+/* ===== Fold 6 outer/middle screen visibility fix ===== */
+.floatingMatToggle{
+  position:fixed;
+  left:10px;
+  bottom:calc(72px + env(safe-area-inset-bottom,0px));
+  z-index:80;
+  display:none;
+  border:0;
+  border-radius:999px;
+  padding:10px 14px;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:1000;
+  color:#2b1705;
+  background:linear-gradient(180deg,#ffe290,#d9952b);
+  box-shadow:0 4px 0 #7a4913,0 10px 20px rgba(0,0,0,.30);
+  touch-action:manipulation;
+}
+.floatingMatToggle:active{
+  transform:translateY(2px);
+  box-shadow:0 2px 0 #7a4913,0 6px 14px rgba(0,0,0,.24);
+}
+
+@media (pointer:coarse), (max-width:980px), (max-height:850px){
+  #modalShade{
+    align-items:stretch !important;
+    justify-content:center !important;
+    padding:0 !important;
+  }
+  #algoModal{
+    width:100vw !important;
+    height:calc(var(--vh, 1vh) * 100) !important;
+    max-height:calc(var(--vh, 1vh) * 100) !important;
+    border-radius:0 !important;
+    border:0 !important;
+    padding:7px !important;
+  }
+  .modalHead{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    align-items:center !important;
+    gap:7px !important;
+    margin-bottom:5px !important;
+  }
+  .modalHead h2{
+    font-size:clamp(19px,5vw,28px) !important;
+    line-height:1.02 !important;
+    margin:0 !important;
+  }
+  .modalHead p{
+    display:none !important;
+  }
+  .equationPill{
+    width:auto !important;
+    min-width:128px !important;
+    gap:6px !important;
+    justify-content:center !important;
+    padding:6px 8px !important;
+    font-size:clamp(19px,5vw,26px) !important;
+    border-radius:14px !important;
+  }
+  #answerBox{
+    min-width:46px !important;
+    min-height:32px !important;
+    padding:2px 7px !important;
+  }
+  .quizBar{
+    position:sticky !important;
+    top:0 !important;
+    z-index:65 !important;
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:5px !important;
+    margin-bottom:6px !important;
+    padding:6px !important;
+    border-radius:14px !important;
+    background:linear-gradient(180deg,rgba(52,29,8,.98),rgba(20,11,4,.98)) !important;
+    box-shadow:0 8px 18px rgba(0,0,0,.28) !important;
+  }
+  .quizBarLeft{
+    display:flex !important;
+    justify-content:center !important;
+    gap:5px !important;
+    width:100% !important;
+    overflow:hidden !important;
+  }
+  .quizBarRight{
+    display:grid !important;
+    grid-template-columns:1fr 1fr auto !important;
+    gap:5px !important;
+    width:100% !important;
+  }
+  .stageBadge{
+    font-size:10.5px !important;
+    padding:5px 7px !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+  }
+  #stageNameText{
+    max-width:70vw !important;
+  }
+  #progressText{
+    max-width:96px !important;
+  }
+  .pillBtn{
+    min-height:36px !important;
+    padding:7px 8px !important;
+    font-size:12.5px !important;
+    border-radius:12px !important;
+    white-space:nowrap !important;
+  }
+  #btnToggleMat{
+    font-size:13px !important;
+  }
+  #btnClosePuzzle{
+    min-width:54px !important;
+  }
+  .workGrid{
+    grid-template-columns:1fr !important;
+    gap:6px !important;
+  }
+  .workGrid.matHidden #pvCard{
+    display:none !important;
+  }
+  .darkCard{
+    padding:7px !important;
+    border-radius:15px !important;
+  }
+  .darkCard h3{
+    font-size:clamp(22px,6vw,30px) !important;
+    margin:0 0 2px !important;
+  }
+  .subText{
+    font-size:11px !important;
+    line-height:1.12 !important;
+    margin:0 0 5px !important;
+  }
+  #matHost,.matCols,.matCol{
+    min-height:260px !important;
+  }
+  .rows,.pileArea{
+    height:180px !important;
+  }
+  .algoBox{
+    padding:5px !important;
+  }
+  .algoLabels,.algoGrid{
+    grid-template-columns:34px repeat(var(--algoCols,3), minmax(48px,1fr)) !important;
+  }
+  .algoLabels div{
+    font-size:10.5px !important;
+  }
+  .aCell,.aSym{
+    min-height:38px !important;
+    font-size:22px !important;
+  }
+  .carryCell{
+    min-height:27px !important;
+    font-size:16px !important;
+  }
+  .digitInput,.digitBox{
+    width:42px !important;
+    height:32px !important;
+    font-size:22px !important;
+    border-radius:9px !important;
+  }
+  .carryInput{
+    width:36px !important;
+    height:26px !important;
+    font-size:17px !important;
+  }
+  .lineRow{
+    height:3px !important;
+  }
+  #keypad{
+    margin-top:5px !important;
+    padding:5px !important;
+    border-radius:13px !important;
+  }
+  #keypad .keyHelp{
+    display:none !important;
+  }
+  #keypad.twoRows .numKeys{
+    grid-template-columns:repeat(6, minmax(0,1fr)) !important;
+  }
+  #keypad.oneRow .numKeys{
+    grid-template-columns:repeat(6, minmax(0,1fr)) !important;
+  }
+  #keypad .numKeys{
+    gap:3px !important;
+  }
+  #keypad .keyBtn{
+    height:28px !important;
+    min-height:28px !important;
+    font-size:14px !important;
+    border-radius:8px !important;
+  }
+  #keypad .keyBtn.utility,
+  #keypad .keyBtn.danger{
+    font-size:10.5px !important;
+  }
+  .actionRow{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) 56px !important;
+    gap:5px !important;
+    margin-top:6px !important;
+  }
+  #btnCheck{
+    min-width:0 !important;
+    min-height:34px !important;
+    padding:6px 8px !important;
+    font-size:14px !important;
+  }
+  #btnHint{
+    min-width:0 !important;
+    width:56px !important;
+    min-height:34px !important;
+    padding:6px 4px !important;
+    font-size:12px !important;
+  }
+  #btnNextQuestion{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:34px !important;
+    padding:6px 8px !important;
+    font-size:14px !important;
+  }
+  .feedback,.hintPanel{
+    margin-top:6px !important;
+    padding:7px !important;
+    border-radius:11px !important;
+    font-size:11.5px !important;
+    line-height:1.15 !important;
+  }
+}
+
+@media (max-width:380px){
+  .modalHead{
+    grid-template-columns:1fr !important;
+  }
+  .equationPill{
+    width:100% !important;
+  }
+  .quizBarRight{
+    grid-template-columns:1fr 1fr 52px !important;
+  }
+  .pillBtn{
+    font-size:11.5px !important;
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+  .floatingMatToggle{
+    bottom:calc(60px + env(safe-area-inset-bottom,0px));
+    padding:9px 12px;
+    font-size:13px;
+  }
+}
+
 </style>
 </head>
 
@@ -1118,6 +1379,8 @@
       <span class="emptyCell"></span><span class="emptyCell"></span><span class="emptyCell"></span>
     </div>
   </div>
+
+  <button id="floatingMatToggle" class="floatingMatToggle" type="button">Show Mat</button>
 
   <div id="modalShade">
     <div id="algoModal">
@@ -1589,11 +1852,11 @@
       modalShade.style.display = "flex";
       clearFeedback();
       hideHint();
+      if(isCompactQuizView()) matVisible = false;
       renderAll();
-      if(!matVisible){ setFeedback("hint", "Mobile view: the algorithm is shown first. Press <b>Show Place Value Mat</b> if you need the discs."); }
       setTimeout(()=>setActiveEntry(document.getElementById("currentDigitInput")),60);
     }
-    function closePuzzle(){ modalShade.style.display = "none"; }
+    function closePuzzle(){ modalShade.style.display = "none"; const b = document.getElementById("floatingMatToggle"); if(b) b.style.display = "none"; }
     document.getElementById("btnClosePuzzle").addEventListener("click", closePuzzle);
 
     function openDoor(){
@@ -1724,7 +1987,13 @@
     let steps = [];
     let state = null;
     let busy = false;
-    let matVisible = !(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+    function isCompactQuizView(){
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      const narrow = window.matchMedia && window.matchMedia("(max-width: 980px)").matches;
+      const shortScreen = window.matchMedia && window.matchMedia("(max-height: 850px)").matches;
+      return !!(coarse || narrow || shortScreen);
+    }
+    let matVisible = !isCompactQuizView();
     let keyboardRows = 2;
     let activeEntry = null;
 
@@ -1957,11 +2226,16 @@
 
       const workGrid = $("workGrid");
       workGrid.classList.toggle("matHidden", !matVisible);
-      $("btnToggleMat").textContent = matVisible ? "Hide Place Value Mat" : "Show Place Value Mat";
+      $("btnToggleMat").textContent = matVisible ? "Hide Mat" : "Show Mat";
+      const floatingMatToggle = $("floatingMatToggle");
+      if(floatingMatToggle){
+        floatingMatToggle.textContent = matVisible ? "Hide Mat" : "Show Mat";
+        floatingMatToggle.style.display = (modalShade.style.display === "flex") ? "block" : "none";
+      }
 
       const keypad = $("keypad");
       keypad.className = keyboardRows === 1 ? "oneRow" : "twoRows";
-      $("btnToggleKeyboard").textContent = keyboardRows === 1 ? "Keyboard: 1 Row" : "Keyboard: 2 Rows";
+      $("btnToggleKeyboard").textContent = keyboardRows === 1 ? "Keys: 1 Row" : "Keys: 2 Rows";
 
       $("matHost").innerHTML = buildMatHTML();
       $("algoHost").innerHTML = makeAlgorithmHTML();
@@ -2210,6 +2484,14 @@
       matVisible = !matVisible;
       renderAll();
     });
+    const floatingMatToggleBtn = $("floatingMatToggle");
+    if(floatingMatToggleBtn){
+      floatingMatToggleBtn.addEventListener("click",()=>{
+        matVisible = !matVisible;
+        renderAll();
+      });
+    }
+
     $("btnToggleKeyboard").addEventListener("click",()=>{
       keyboardRows = keyboardRows === 1 ? 2 : 1;
       renderAll();
@@ -2252,4 +2534,3 @@
   </script>
 </body>
 </html>
-
