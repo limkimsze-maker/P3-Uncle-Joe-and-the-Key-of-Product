@@ -2053,6 +2053,53 @@ body.quizPageOpen #messageBox{
       font-weight:900;
     }
 
+
+    /* ===== FIXED SHINE BUTTON POSITION =====
+       Stays above the jewel row; does not shift when pressed. */
+    #shineBtn{
+      position:fixed !important;
+      display:none;
+      left:50% !important;
+      right:auto !important;
+      bottom:calc(54px + var(--safeBottom)) !important;
+      transform:translateX(-50%) !important;
+      z-index:16 !important;
+      width:112px !important;
+      height:56px !important;
+      border-radius:18px !important;
+      font-size:15px !important;
+      line-height:1.05 !important;
+      padding:5px 12px !important;
+      color:#3b2202 !important;
+      font-weight:1000 !important;
+      background:linear-gradient(180deg,#fff7b8,#facc15) !important;
+      border:3px solid rgba(255,255,255,.65) !important;
+      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
+      cursor:pointer;
+      touch-action:manipulation;
+      pointer-events:auto;
+      will-change:auto !important;
+    }
+    #shineBtn:active{
+      transform:translateX(-50%) !important;
+      box-shadow:0 6px 0 #b45309,0 12px 22px rgba(0,0,0,.32),0 0 26px rgba(250,204,21,.42) !important;
+    }
+    @media(max-width:760px){
+      #shineBtn{
+        left:50% !important;
+        right:auto !important;
+        bottom:calc(45px + var(--safeBottom)) !important;
+        transform:translateX(-50%) !important;
+        width:104px !important;
+        height:50px !important;
+        font-size:13px !important;
+        border-radius:16px !important;
+      }
+      #shineBtn:active{
+        transform:translateX(-50%) !important;
+      }
+    }
+
 </style>
 </head>
 
@@ -2113,7 +2160,7 @@ body.quizPageOpen #messageBox{
 
   <div id="helpCard">
     <b>Desktop:</b> WASD to move. Arrow keys or drag to look. Press <b>E</b> to inspect.<br>
-    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. Use SHINE in C3. It is forgiving — face the scarab area and press SHINE. Use CAST with the Magic Wand in C5.
+    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. Use SHINE in C3. It is very forgiving — press SHINE in the scarab chamber to light the next scarab. Use CAST with the Magic Wand in C5.
   </div>
 
   <div id="buttonsTopRight">
@@ -3423,6 +3470,10 @@ function showLightBeam(){
       setFeedback("hint","Scarab Puzzle Chamber: solve this varied 3-digit × 1-digit question to light the scarab symbol.");
     }
 
+    function nextUnlitScarab(){
+      return scarabs.find(s => s && s.alive && !scarabChallengeDone.has(s.idx)) || null;
+    }
+
     function findEasyScarabTarget(){
       const live = scarabs.filter(s => s && s.alive && !scarabChallengeDone.has(s.idx));
       if(!live.length) return null;
@@ -3435,16 +3486,15 @@ function showLightBeam(){
         pos.y += 1.0;
         const projected = pos.clone().project(camera);
 
-        // Only consider scarabs generally in front of the camera.
-        if(projected.z < -1 || projected.z > 1) continue;
+        // Allow a very broad visible area, not just the centre dot.
+        if(projected.z < -1.2 || projected.z > 1.2) continue;
 
         const sx = (projected.x * .5 + .5) * window.innerWidth;
         const sy = (-projected.y * .5 + .5) * window.innerHeight;
         const centreDist = Math.hypot(sx - window.innerWidth / 2, sy - window.innerHeight / 2);
         const worldDist = s.group.position.distanceTo(camera.position);
+        const score = centreDist + worldDist * 8;
 
-        // Very forgiving score: centre aiming matters, but closeness also helps.
-        const score = centreDist + worldDist * 18;
         if(score < bestScore){
           bestScore = score;
           best = {obj:s, centreDist, worldDist, projected};
@@ -3453,20 +3503,16 @@ function showLightBeam(){
 
       if(!best) return null;
 
-      // MUCH WIDER tolerance for phone:
-      // - roughly within 55% of smaller screen dimension from centre, OR
-      // - close to the scarab, OR
-      // - the next unlit scarab is visible and not too far away.
-      const screenAllowance = Math.min(window.innerWidth, window.innerHeight) * .55;
-      const closeAllowance = 8.5;
-      const farButVisibleAllowance = 13.5;
+      // EXTREMELY WIDE tolerance:
+      // If the scarab is anywhere reasonably visible, or the pupil is in the chamber, accept it.
+      const screenAllowance = Math.min(window.innerWidth, window.innerHeight) * .85;
+      const closeAllowance = 18.0;
 
-      const isAcceptable =
-        best.centreDist < screenAllowance ||
-        best.worldDist < closeAllowance ||
-        (best.obj.idx === scarabChallengeDone.size && best.worldDist < farButVisibleAllowance);
+      if(best.centreDist < screenAllowance || best.worldDist < closeAllowance){
+        return best.obj;
+      }
 
-      return isAcceptable ? best.obj : null;
+      return null;
     }
 
     function shineScarab(){
@@ -3479,7 +3525,7 @@ function showLightBeam(){
       unlockAudio();
       showLightBeam();
 
-      // First try exact raycast hit.
+      // 1. Exact raycast still works.
       raycaster.setFromCamera(aimNdc,camera);
       const aliveMeshes = scarabMeshes.filter(m => {
         const idx = m.userData.scarabIndex;
@@ -3487,21 +3533,21 @@ function showLightBeam(){
       });
       const hits = raycaster.intersectObjects(aliveMeshes,false);
       if(hits.length){
-        const idx = hits[0].object.userData.scarabIndex;
-        openScarabQuestion(idx);
+        openScarabQuestion(hits[0].object.userData.scarabIndex);
         return;
       }
 
-      // Then use a very forgiving phone-friendly target.
+      // 2. Broad visible/near target.
       const easyTarget = findEasyScarabTarget();
       if(easyTarget){
         openScarabQuestion(easyTarget.idx);
         return;
       }
 
-      // Final fallback: if the player is inside the scarab chamber,
-      // allow SHINE to activate the next unlit scarab. This prevents frustration.
-      const nextObj = scarabs.find(s => s && s.alive && !scarabChallengeDone.has(s.idx));
+      // 3. Ultra-forgiving fallback:
+      // Once the player is in Chamber 3, SHINE will activate the next unlit scarab.
+      // This removes aiming frustration on mobile screens.
+      const nextObj = nextUnlitScarab();
       if(nextObj){
         openScarabQuestion(nextObj.idx);
         return;
