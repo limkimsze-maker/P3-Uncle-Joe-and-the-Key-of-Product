@@ -2212,6 +2212,44 @@ body.quizPageOpen #messageBox{
       }
     }
 
+
+    /* ===== COVER ACCESS FIX: How to Play / Reset must be visible at start ===== */
+    .coverImageWrap{
+      max-height:42vh !important;
+    }
+    .coverImageWrap img{
+      max-height:42vh !important;
+      object-fit:contain !important;
+      background:#1b1006 !important;
+    }
+    #coverHowToToggle{
+      margin-top:10px;
+      width:min(620px,100%);
+    }
+    #quickHowToPanel{
+      display:none;
+      width:min(760px,100%);
+      margin:12px auto 0;
+      text-align:left;
+      background:rgba(16,8,3,.50);
+      border:2px solid rgba(255,216,107,.42);
+      border-radius:20px;
+      padding:14px 16px;
+      color:#fff3cf;
+      font-size:14px;
+      font-weight:800;
+      line-height:1.45;
+    }
+    #quickHowToPanel.show{display:block;}
+    #quickHowToPanel ol{margin:8px 0 12px 22px;padding:0;}
+    #quickHowToPanel li{margin:5px 0;}
+    #quickHowToPanel .resetWarningBox{margin-top:12px;}
+    @media(max-width:760px){
+      .coverImageWrap{max-height:36vh !important;}
+      .coverImageWrap img{max-height:36vh !important;}
+      #quickHowToPanel{font-size:13px;padding:12px;}
+    }
+
 </style>
 </head>
 
@@ -2231,6 +2269,25 @@ body.quizPageOpen #messageBox{
 
       <div class="coverActions">
         <button class="coverBtn" id="coverStartBtn">Start / Continue Mission</button>
+        <button class="coverBtn secondary" id="coverHowToToggle" type="button">How to Play / Reset Progress</button>
+      </div>
+
+      <div id="quickHowToPanel">
+        <p><b>How to Play</b></p>
+        <ol>
+          <li>Move around using the direction buttons or keyboard controls.</li>
+          <li>Walk near the tablet, torch, numbered scarab, bridge step, or villager.</li>
+          <li>Tap the prompt that appears, such as <b>Solve Scarab 1 question</b>.</li>
+          <li>Solve the multiplication algorithm. The object will light up or be completed automatically.</li>
+          <li>Complete the chambers in order and collect the <b>Key of Product</b>.</li>
+        </ol>
+        <div class="resetWarningBox">
+          <b>Reset Progress:</b><br>
+          If you keep starting in Chamber 3 or want to restart from the beginning, press and hold the reset button below for <b>2 seconds</b>.
+          <div style="margin-top:10px;text-align:center;">
+            <button class="coverBtn secondary" id="coverResetBtnTop" type="button">Hold 2s: Reset Progress</button>
+          </div>
+        </div>
       </div>
 
       <div class="coverHowTo">
@@ -2530,7 +2587,26 @@ const wrap = document.getElementById("gameWrap");
     }
 
     function clearSavedProgress(){
-      try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+      try{
+        localStorage.removeItem(SAVE_KEY);
+        // Clear older/related local progress keys for this project too.
+        const kill = [];
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(!k) continue;
+          if(
+            k.includes("p3_multiply_egyptian_maze") ||
+            k.includes("P3-Multiply-Egyptian-Maze") ||
+            k.includes("Uncle_Joe") ||
+            k.includes("uncle_joe") ||
+            k.includes("Key_of_Product")
+          ) kill.push(k);
+        }
+        kill.forEach(k=>localStorage.removeItem(k));
+      }catch(e){}
+      try{
+        sessionStorage.clear();
+      }catch(e){}
     }
 
     function loadProgressData(){
@@ -3559,7 +3635,7 @@ const wrap = document.getElementById("gameWrap");
         id:"scarabBtn" + idx,
         group,
         position:new THREE.Vector3(x,.55,z),
-        radius:6.5,
+        radius:8.5,
         label:`Solve Scarab ${idx+1} question`
       });
 
@@ -4305,6 +4381,24 @@ function addTablet(){
       });
     }
 
+    function currentScarabPromptTarget(){
+      const idx = scarabChallengeDone.size;
+      const s = scarabs[idx];
+      if(!s || !s.alive || emeraldCollected || !camera) return null;
+      const nearC3 = camera.position.z < -20.0 && camera.position.z > -37.5;
+      const dist = Math.hypot(camera.position.x - s.group.position.x, camera.position.z - s.group.position.z);
+      if(nearC3 && dist < 8.5){
+        return {
+          id:"scarabBtn" + idx,
+          group:s.group,
+          position:new THREE.Vector3(s.group.position.x,.55,s.group.position.z),
+          radius:8.5,
+          label:`Solve Scarab ${idx+1} question`
+        };
+      }
+      return null;
+    }
+
     function updateInteraction(){
       updateScarabPromptVisuals();
       currentTarget = null;
@@ -4321,8 +4415,8 @@ function addTablet(){
         }
         if(String(item.id || "").startsWith("scarabBtn")){
           const idx = Number(String(item.id).replace("scarabBtn",""));
-          const scarabStageReady = (window.secondDoorOpen || topazCollected || (camera && camera.position.z < -21.0));
-          if(!scarabStageReady || emeraldCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
+          const nearC3 = camera && camera.position.z < -20.0 && camera.position.z > -37.5;
+          if(!nearC3 || emeraldCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
         }
         if(String(item.id || "").startsWith("sandBtn")){
           const idx = Number(String(item.id).replace("sandBtn",""));
@@ -4353,6 +4447,7 @@ if(currentTarget){
 
     promptEl.addEventListener("click", tryInteract);
     function tryInteract(){
+      if(!currentTarget) currentTarget = currentScarabPromptTarget();
       if(!currentTarget) return;
       unlockAudio();
       if(currentTarget.id === "tablet"){
@@ -4704,7 +4799,9 @@ function openPuzzle(){
         try{ closePuzzle(); }catch(e){}
         const cover = document.getElementById("coverPage");
         if(cover) cover.style.display = "flex";
-        showMessage("Main Menu opened. To restart from the beginning, open How to Play and hold Reset Progress for 2 seconds.");
+        const p = document.getElementById("quickHowToPanel");
+        if(p) p.classList.add("show");
+        showMessage("Main Menu opened. Use How to Play / Reset Progress if you want to restart from the beginning.");
       });
     }
 
@@ -4746,7 +4843,17 @@ function openPuzzle(){
     }
 
     setupHoldReset(document.getElementById("coverResetBtn"));
+    setupHoldReset(document.getElementById("coverResetBtnTop"));
+    const coverHowToToggle = document.getElementById("coverHowToToggle");
+    if(coverHowToToggle){
+      coverHowToToggle.addEventListener("click",()=>{
+        const p = document.getElementById("quickHowToPanel");
+        if(p) p.classList.toggle("show");
+      });
+    }
     document.getElementById("coverStartBtn").addEventListener("click",()=>{
+      const p = document.getElementById("quickHowToPanel");
+      if(p) p.classList.remove("show");
       document.getElementById("coverPage").style.display = "none";
       unlockAudio();
       showMessage(progressLoaded ? "Progress loaded. Continue the rescue mission!" : "Starting Chamber: inspect the tablet and solve 6 products to open the first door.");
