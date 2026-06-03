@@ -5788,7 +5788,7 @@ function addTablet(){
       group.add(rubyLabel);
 
       scene.add(group);
-      const obj = {id:"ruby",group,position:new THREE.Vector3(0,1.05,-10.2),radius:4.8,label:"Collect Ruby of Product"};
+      const obj = {id:"ruby",group,position:new THREE.Vector3(0,1.05,-10.2),radius:5.2,label:"Collect Ruby of Product"};
       interactables.push(obj);
       animated.push({type:"ruby",group,ruby,halo,light,t:0});
       return obj;
@@ -6668,6 +6668,7 @@ function openPuzzle(){
     
 
     function refreshVisualStateBeforeRubyCollection(){
+      // GOOD PRE-RUBY VIEW LOCK: camera should stay before the Ruby, not inside it.
       // The Ruby collection path already proves the visual state becomes normal.
       // This applies the same 3D/canvas stabilisation BEFORE the Ruby is collected,
       // while keeping the Ruby visible and collectable.
@@ -6684,7 +6685,7 @@ function openPuzzle(){
         window.rubyObj.group.visible = true;
         window.rubyObj.group.position.set(0,1.05,-10.2);
         window.rubyObj.position.set(0,1.05,-10.2);
-        window.rubyObj.radius = 4.8;
+        window.rubyObj.radius = 5.2;
       }
       syncDoorBlockers();
       updateTorchGalleryProgression?.();
@@ -6708,7 +6709,7 @@ function openPuzzle(){
       if(!doorOpen || !window.firstDoor || !window.rubyObj) return;
       refreshVisualStateBeforeRubyCollection();
       if(camera.position.z > -8.2 || camera.position.z < -11.6){
-        setPlayerFloorView(0,-9.35,0);
+        setPlayerFloorView(0,-6.9,0);
       }
       showMessage("Starting Chamber cleared! You are back at floor level. Collect the Ruby of Product.");
     }
@@ -6724,13 +6725,13 @@ function openPuzzle(){
         blocker: window.firstDoorBlocker,
         doorZ: -7.72,
         cameraZ: -3.0,
-        restoreAfterOpen: {x:0, z:-9.35, ry:0},
+        restoreAfterOpen: {x:0, z:-6.9, ry:0},
         message: "Watch carefully... the door is opening!",
         onComplete: ()=>{
           rubyVisible = true;
           if(window.rubyObj) window.rubyObj.group.visible = true;
           refreshVisualStateBeforeRubyCollection();
-          setPlayerFloorView(0,-9.35,0);
+          setPlayerFloorView(0,-6.9,0);
           showMessage("Starting Chamber cleared! You are back at floor level. Collect the Ruby of Product.");
           setTimeout(firstDoorPostOpenWatchdog,120);
           setTimeout(firstDoorPostOpenWatchdog,520);
