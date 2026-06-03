@@ -2148,11 +2148,42 @@ body.quizPageOpen #messageBox{
     /* Prompt-based C3/C5: no shooting buttons. */
     #shineBtn,#wandBtn{display:none !important; visibility:hidden !important; pointer-events:none !important;}
 
+
+    #mainMenuBtn{
+      position:fixed;
+      right:calc(14px + env(safe-area-inset-right,0px));
+      top:calc(108px + env(safe-area-inset-top,0px));
+      z-index:22;
+      border:none;
+      border-radius:16px;
+      padding:9px 13px;
+      font-family:inherit;
+      font-size:13px;
+      font-weight:1000;
+      color:#2b1705;
+      background:linear-gradient(180deg,#fff0a8,#ffb33f);
+      box-shadow:0 5px 0 #7a4913,0 10px 18px rgba(0,0,0,.28);
+      cursor:pointer;
+      touch-action:manipulation;
+      pointer-events:auto;
+    }
+    #mainMenuBtn:active{transform:translateY(2px);box-shadow:0 3px 0 #7a4913,0 6px 12px rgba(0,0,0,.25);}
+    @media(max-width:760px){
+      #mainMenuBtn{
+        top:calc(104px + env(safe-area-inset-top,0px));
+        right:calc(8px + env(safe-area-inset-right,0px));
+        font-size:12px;
+        padding:8px 10px;
+        border-radius:14px;
+      }
+    }
+
 </style>
 </head>
 
 <body>
   <div id="gameWrap"></div>
+  <button id="mainMenuBtn" type="button">☰ Main Menu</button>
 
   <div id="coverPage" aria-label="Game introduction">
     <div class="coverCard">
@@ -2184,7 +2215,7 @@ body.quizPageOpen #messageBox{
 
             <div class="resetWarningBox">
               <b>Reset Progress:</b><br>
-              Your progress is saved on this device. To restart from the beginning, press and hold the reset button below for <b>2 seconds</b>.
+              Your progress is saved on this device. If you keep starting in Chamber 3 or want to restart from the beginning, press and hold the reset button below for <b>2 seconds</b>.
               Do this only if you are sure, because it will clear your saved progress.
               <div style="margin-top:10px;text-align:center;">
                 <button class="coverBtn secondary" id="coverResetBtn">Hold 2s: Reset Progress</button>
@@ -2208,7 +2239,7 @@ body.quizPageOpen #messageBox{
 
   <div id="helpCard">
     <b>Desktop:</b> WASD to move. Arrow keys or drag to look. Press <b>E</b> to inspect.<br>
-    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. In C3, the next scarab prompt will appear automatically. In C5, walk near the next villager and press the prompt.
+    <b>Mobile:</b> left pad moves, right pad looks. Tap prompt to inspect. In C3, walk near the numbered scarab pad and press the prompt. In C5, walk near the next villager and press the prompt.
   </div>
 
   <div id="buttonsTopRight">
@@ -3404,6 +3435,28 @@ const wrap = document.getElementById("gameWrap");
       });
       const darkMat = new THREE.MeshStandardMaterial({color:0x062816,roughness:.55,metalness:.05,emissive:0x042012,emissiveIntensity:.22});
 
+      // C2/C4-style visible prompt pad on the floor.
+      const pad = new THREE.Mesh(
+        new THREE.CylinderGeometry(.9,.98,.12,32),
+        new THREE.MeshStandardMaterial({
+          color:0x2f1a08,
+          roughness:.42,
+          metalness:.06,
+          emissive:0x0f5132,
+          emissiveIntensity:.38
+        })
+      );
+      pad.position.y = -.68;
+      group.add(pad);
+
+      const padRing = new THREE.Mesh(
+        new THREE.TorusGeometry(.93,.035,10,56),
+        new THREE.MeshBasicMaterial({color:0xbbf7d0,transparent:true,opacity:.85})
+      );
+      padRing.rotation.x = Math.PI/2;
+      padRing.position.y = -.59;
+      group.add(padRing);
+
       const body = new THREE.Mesh(new THREE.SphereGeometry(.42,20,14), shellMat);
       body.scale.set(1.18,.42,.82);
       body.castShadow = !LOW_POWER;
@@ -3427,6 +3480,30 @@ const wrap = document.getElementById("gameWrap");
         }
       }
 
+      const numCanvas = document.createElement("canvas");
+      numCanvas.width = 256; numCanvas.height = 256;
+      const ctx = numCanvas.getContext("2d");
+      ctx.clearRect(0,0,256,256);
+      ctx.fillStyle = "rgba(28,14,3,.92)";
+      ctx.beginPath(); ctx.arc(128,128,110,0,Math.PI*2); ctx.fill();
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = "#ffe08a";
+      ctx.stroke();
+      ctx.fillStyle = "#fff3c4";
+      ctx.font = "bold 118px Georgia,serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(idx+1),128,134);
+      const numTex = new THREE.CanvasTexture(numCanvas);
+      if(THREE.sRGBEncoding) numTex.encoding = THREE.sRGBEncoding;
+      const numLabel = new THREE.Mesh(
+        new THREE.PlaneGeometry(.78,.78),
+        new THREE.MeshBasicMaterial({map:numTex,transparent:true,side:THREE.DoubleSide})
+      );
+      numLabel.position.set(0,1.05,.08);
+      numLabel.renderOrder = 20;
+      group.add(numLabel);
+
       const glow = new THREE.PointLight(0x22c55e, LOW_POWER ? .9 : 1.25, 5, 1.7);
       glow.position.set(0,.35,0);
       group.add(glow);
@@ -3438,17 +3515,20 @@ const wrap = document.getElementById("gameWrap");
 
       scene.add(group);
 
-      const scarab = {idx,group,body,glow,ring,alive:true};
+      const scarab = {idx,group,body,glow,ring,pad,padRing,numLabel,alive:true};
       scarabs[idx] = scarab;
       scarabMeshes.push(body);
       body.userData.scarabIndex = idx;
+
+      // Same idea as torch/bridge: stand near this numbered scarab pad, then tap the prompt.
       interactables.push({
         id:"scarabBtn" + idx,
         group,
-        position:new THREE.Vector3(x,1.0,z),
-        radius:12.0,
-        label:`Solve scarab ${idx+1} question`
+        position:new THREE.Vector3(x,.55,z),
+        radius:3.4,
+        label:`Solve Scarab ${idx+1}`
       });
+
       animated.push({type:"scarab",obj:scarab,t:Math.random()*10});
       return scarab;
     }
@@ -3472,6 +3552,16 @@ const wrap = document.getElementById("gameWrap");
       if(s.ring && s.ring.material){
         s.ring.material.color.setHex(0xfff7ad);
         s.ring.material.opacity = .95;
+      }
+      if(s.pad && s.pad.material){
+        s.pad.material.color.setHex(0x7a4a05);
+        s.pad.material.emissive.setHex(0xfacc15);
+        s.pad.material.emissiveIntensity = .7;
+        s.pad.material.needsUpdate = true;
+      }
+      if(s.padRing && s.padRing.material){
+        s.padRing.material.color.setHex(0xfff7ad);
+        s.padRing.material.opacity = .98;
       }
 
       playChime();
@@ -4164,19 +4254,6 @@ function addTablet(){
     }
 
 
-    function nextPromptScarab(){
-      const idx = scarabChallengeDone.size;
-      const s = scarabs[idx];
-      if(!s || !s.alive || scarabChallengeDone.has(idx)) return null;
-      return {
-        id:"scarabBtn" + idx,
-        group:s.group,
-        position:s.group.position.clone(),
-        radius:999,
-        label:`Solve scarab ${idx+1} question`
-      };
-    }
-
     function updateInteraction(){
       currentTarget = null;
       let nearest = Infinity;
@@ -4192,7 +4269,8 @@ function addTablet(){
         }
         if(String(item.id || "").startsWith("scarabBtn")){
           const idx = Number(String(item.id).replace("scarabBtn",""));
-          if(!window.secondDoorOpen || !topazCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
+          const inC3Area = camera && camera.position.z < -21.5 && camera.position.z > -36.5;
+          if(!inC3Area || emeraldCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
         }
         if(String(item.id || "").startsWith("sandBtn")){
           const idx = Number(String(item.id).replace("sandBtn",""));
@@ -4208,11 +4286,7 @@ function addTablet(){
           nearest = dist; currentTarget = item;
         }
       }
-      if(!currentTarget && window.secondDoorOpen && topazCollected && !emeraldCollected && camera && camera.position.z < -21.5){
-        currentTarget = nextPromptScarab();
-      }
-
-      if(currentTarget){
+if(currentTarget){
         promptText.textContent = currentTarget.label;
         promptEl.style.display = "inline-flex";
       }else{
@@ -4227,9 +4301,6 @@ function addTablet(){
 
     promptEl.addEventListener("click", tryInteract);
     function tryInteract(){
-      if(!currentTarget && window.secondDoorOpen && topazCollected && !emeraldCollected && camera && camera.position.z < -21.5){
-        currentTarget = nextPromptScarab();
-      }
       if(!currentTarget) return;
       unlockAudio();
       if(currentTarget.id === "tablet"){
@@ -4277,7 +4348,7 @@ function addTablet(){
         quiz.solvedTotal = 0;
         loadQuestion(randomQuestionForScarab());
         openPuzzle();
-        setFeedback("hint", "Scarab Puzzle Chamber: solve this 3-digit × 1-digit question to light one scarab.");
+        setFeedback("hint", "Scarab Puzzle Chamber: solve this 3-digit × 1-digit question to light this numbered scarab.");
       }
       if(String(currentTarget.id || "").startsWith("sandBtn")){
         const idx = Number(String(currentTarget.id).replace("sandBtn",""));
@@ -4573,6 +4644,17 @@ function openPuzzle(){
     function playWrong(){beep(95,.18,"sawtooth",.055,0);beep(70,.22,"sawtooth",.045,.12);}
     function playStoneMove(){beep(110,.35,"sawtooth",.045,0);beep(145,.35,"square",.03,.18);}
     function playVictory(){beep(523,.12,"sine",.08,0);beep(659,.12,"sine",.08,.13);beep(784,.14,"sine",.08,.26);beep(1046,.28,"triangle",.08,.42);}
+
+
+    const mainMenuBtn = document.getElementById("mainMenuBtn");
+    if(mainMenuBtn){
+      mainMenuBtn.addEventListener("click",()=>{
+        try{ closePuzzle(); }catch(e){}
+        const cover = document.getElementById("coverPage");
+        if(cover) cover.style.display = "flex";
+        showMessage("Main Menu opened. To restart from the beginning, open How to Play and hold Reset Progress for 2 seconds.");
+      });
+    }
 
     soundBtn.addEventListener("click",()=>{
       soundOn = !soundOn;
