@@ -3811,10 +3811,10 @@ const wrap = document.getElementById("gameWrap");
     const interactables = [];
     const animated = [];
 
-    const matSand = new THREE.MeshStandardMaterial({ color:0xc89451, roughness:.86, metalness:.03, emissive:0x2a1204, emissiveIntensity:.18 });
-    const matStone = new THREE.MeshStandardMaterial({ color:0xaa7b45, roughness:.9, metalness:.02, emissive:0x2d1606, emissiveIntensity:.22 });
+    const matSand = new THREE.MeshStandardMaterial({ color:0xb98b4c, roughness:.9, metalness:.03 });
+    const matStone = new THREE.MeshStandardMaterial({ color:0x9a7447, roughness:.95, metalness:.02 });
     const matDarkStone = new THREE.MeshStandardMaterial({ color:0x6b4b2e, roughness:.98, metalness:.02 });
-    const matDoor = new THREE.MeshStandardMaterial({ color:0x8b6033, roughness:.88, metalness:.04, emissive:0x261004, emissiveIntensity:.20 });
+    const matDoor = new THREE.MeshStandardMaterial({ color:0x7b5732, roughness:.92, metalness:.04 });
     const matTablet = new THREE.MeshStandardMaterial({ color:0x4b3420, roughness:.88, metalness:.02 });
     const matGlow = new THREE.MeshStandardMaterial({ color:0xffd36b, emissive:0xff9d28, emissiveIntensity:1.35, roughness:.45 });
     const matRuby = new THREE.MeshStandardMaterial({ color:0xe91954, emissive:0xff185e, emissiveIntensity:.95, roughness:.28, metalness:.2 });
@@ -3847,6 +3847,20 @@ const wrap = document.getElementById("gameWrap");
       emissive:0x020000,
       emissiveIntensity:.035
     });
+    const matBrightChamberFloor = new THREE.MeshStandardMaterial({
+      color:0xd7a95f,
+      roughness:.78,
+      metalness:.02,
+      emissive:0x3b2208,
+      emissiveIntensity:.20
+    });
+    const matBrightChamberWall = new THREE.MeshStandardMaterial({
+      color:0xb9854d,
+      roughness:.82,
+      metalness:.02,
+      emissive:0x2f1906,
+      emissiveIntensity:.22
+    });
 
     const matC3Floor = new THREE.MeshStandardMaterial({
       color:0xc7934f,
@@ -3871,9 +3885,9 @@ const wrap = document.getElementById("gameWrap");
     });
 
     function addAmbient(){
-      const hemi = new THREE.HemisphereLight(0xffe2a3, 0x120603, 0.42);
+      const hemi = new THREE.HemisphereLight(0xffe2a3, 0x1a0c04, LOW_POWER ? 0.46 : 0.62);
       scene.add(hemi);
-      const moon = new THREE.DirectionalLight(0xffddaa, LOW_POWER ? 0.25 : 0.34);
+      const moon = new THREE.DirectionalLight(0xffddaa, LOW_POWER ? 0.32 : 0.46);
       moon.position.set(-5, 12, 8);
       moon.castShadow = !LOW_POWER;
       if(moon.castShadow){
@@ -5802,17 +5816,18 @@ function addTablet(){
     }
 
 
-    function addBrightChamberLight(x,z,intensity=1.35,distance=15){
-      const light = new THREE.PointLight(0xffd98a, LOW_POWER ? intensity * .65 : intensity, distance, 1.75);
-      light.position.set(x,3.0,z);
-      light.castShadow = false;
+    function addBrightChamberLight(x,z,intensity=1.65,distance=17){
+      const light = new THREE.PointLight(0xffd28a, LOW_POWER ? intensity*.72 : intensity, distance, 1.55);
+      light.position.set(x,3.15,z);
+      light.castShadow = !LOW_POWER;
       scene.add(light);
 
       const glow = new THREE.Mesh(
-        new THREE.SphereGeometry(.12,10,8),
-        new THREE.MeshBasicMaterial({color:0xffe2a3,transparent:true,opacity:.55})
+        new THREE.CircleGeometry(1.05,36),
+        new THREE.MeshBasicMaterial({color:0xffd86b,transparent:true,opacity:.18,side:THREE.DoubleSide})
       );
-      glow.position.set(x,2.9,z);
+      glow.position.set(x,3.34,z);
+      glow.rotation.x = Math.PI/2;
       scene.add(glow);
       return light;
     }
@@ -5822,7 +5837,7 @@ function addTablet(){
       // Visual-only reinforcement for Chamber 3.
       // These skins do not change the player's collision/progression.
       const floorSkin = addFloor(0,-28.5,14.75,14.75,matC3Floor);
-      floorSkin.position.y = -0.055;
+      floorSkin.position.y = -0.052;
 
       const visualWall = (x,z,w,d,h=3.36)=>{
         const wall = addWall(x,z,w,d,h,matC3Wall,false);
@@ -5914,25 +5929,21 @@ function addTablet(){
     function buildWorld(){
       addAmbient();
       // Bright chambers; Torch Corridor remains deliberately dark.
-      addBrightChamberLight(0,0,2.35,20);
-      addBrightChamberLight(-4.8,0,1.15,12);
-      addBrightChamberLight(4.8,0,1.15,12);
-      addBrightChamberLight(0,-28.5,2.45,20);
-      addBrightChamberLight(-4.8,-28.5,1.15,12);
-      addBrightChamberLight(4.8,-28.5,1.15,12);
-      addBrightChamberLight(0,-49,2.25,20);
-      addBrightChamberLight(0,-64.5,2.0,16);
-      addBrightChamberLight(0,-78.5,2.35,20);
-      addBrightChamberLight(0,-98.5,2.45,20);
-      addFloor(0,0,15,15);
+      addBrightChamberLight(0,0,1.65,17);
+      addBrightChamberLight(0,-28.5,1.75,17);
+      addBrightChamberLight(0,-49,1.65,19);
+      addBrightChamberLight(0,-64.5,1.45,15);
+      addBrightChamberLight(0,-78.5,1.75,18);
+      addBrightChamberLight(0,-98.5,1.85,18);
+      addFloor(0,0,15,15,matBrightChamberFloor);
       addFloor(0,-13.5,6,13,matTorchDarkFloor);
-      addFloor(0,-28.5,15,15);
+      addFloor(0,-28.5,15,15,matBrightChamberFloor);
 
-      addWall(0,7.5,15,.55);
-      addWall(-7.5,0,.55,15);
-      addWall(7.5,0,.55,15);
-      addWall(-5.25,-7.5,4.5,.55);
-      addWall(5.25,-7.5,4.5,.55);
+      addWall(0,7.5,15,.55,3.4,matBrightChamberWall);
+      addWall(-7.5,0,.55,15,3.4,matBrightChamberWall);
+      addWall(7.5,0,.55,15,3.4,matBrightChamberWall);
+      addWall(-5.25,-7.5,4.5,.55,3.4,matBrightChamberWall);
+      addWall(5.25,-7.5,4.5,.55,3.4,matBrightChamberWall);
       addWall(-3.25,-13.5,.55,13,3.4,matTorchDarkWall);
       addWall(3.25,-13.5,.55,13,3.4,matTorchDarkWall);
       window.firstDoor = addWall(0,-7.72,15.0,.72,3.8,matDoor,true);
@@ -5960,17 +5971,17 @@ function addTablet(){
       scene.add(window.firstDoorLabel);
 
 
-      addWall(-7.5,-28.5,.55,15);
-      addWall(7.5,-28.5,.55,15);
+      addWall(-7.5,-28.5,.55,15,3.4,matBrightChamberWall);
+      addWall(7.5,-28.5,.55,15,3.4,matBrightChamberWall);
       // Chamber 3 to Chamber 4 doorway: leave a real central gap for the bridge door.
-      addWall(-5.65,-36,3.7,.55);
-      addWall(5.65,-36,3.7,.55);
+      addWall(-5.65,-36,3.7,.55,3.4,matBrightChamberWall);
+      addWall(5.65,-36,3.7,.55,3.4,matBrightChamberWall);
       window.thirdDoorOpen = false;
       window.thirdDoor = addWall(0,-35.72,15.0,.72,3.8,matDoor,true);
       window.thirdDoorBlocker = addSolidObstacle(null,0,-35.72,15.6,1.2,true);
       window.bridgeArrowSign = addBridgeArrowSign();
-      addWall(-5.25,-21,4.5,.55);
-      addWall(5.25,-21,4.5,.55);
+      addWall(-5.25,-21,4.5,.55,3.4,matBrightChamberWall);
+      addWall(5.25,-21,4.5,.55,3.4,matBrightChamberWall);
 
       window.secondDoorOpen = false;
       window.secretDoor = addWall(0,-21,15.0,.72,3.8,matDoor,true);
@@ -5980,39 +5991,39 @@ function addTablet(){
       restoreChamber3Visuals();
 
       // Chamber 4: Bridge Crossing Chamber
-      addFloor(0,-49.0,15,22);
-      addFloor(0,-64.5,15,8);
-      addWall(-7.5,-49,.55,22);
-      addWall(7.5,-49,.55,22);
+      addFloor(0,-49.0,15,22,matBrightChamberFloor);
+      addFloor(0,-64.5,15,8,matBrightChamberFloor);
+      addWall(-7.5,-49,.55,22,3.4,matBrightChamberWall);
+      addWall(7.5,-49,.55,22,3.4,matBrightChamberWall);
       // Chamber 4 to reward corridor doorway: leave a real central gap.
-      addWall(-5.65,-60,3.7,.55);
-      addWall(5.65,-60,3.7,.55);
+      addWall(-5.65,-60,3.7,.55,3.4,matBrightChamberWall);
+      addWall(5.65,-60,3.7,.55,3.4,matBrightChamberWall);
       window.fourthDoorOpen = false;
       window.fifthDoorOpen = false;
       window.fourthDoor = addWall(0,-59.72,15.0,.72,3.8,matDoor,true);
       window.fourthDoorBlocker = addSolidObstacle(null,0,-59.72,15.6,1.2,true);
-      addWall(-7.5,-64.5,.55,8);
-      addWall(7.5,-64.5,.55,8);
+      addWall(-7.5,-64.5,.55,8,3.4,matBrightChamberWall);
+      addWall(7.5,-64.5,.55,8,3.4,matBrightChamberWall);
       window.fifthDoorOpen = false;
       window.fifthDoor = addWall(0,-68.22,15.0,.72,3.8,matDoor,true);
       window.fifthDoorBlocker = addSolidObstacle(null,0,-68.22,15.6,1.2,true);
       window.villagerHallArrowSign = addVillagerHallArrowSign(); // hidden placeholder; sign removed
 
       // Chamber 5: Spellbound Villagers Hall
-      addFloor(0,-78.5,15,19);
-      addWall(-7.5,-78.5,.55,19);
-      addWall(7.5,-78.5,.55,19);
-      addWall(-5.65,-88,3.7,.55);
-      addWall(5.65,-88,3.7,.55);
+      addFloor(0,-78.5,15,19,matBrightChamberFloor);
+      addWall(-7.5,-78.5,.55,19,3.4,matBrightChamberWall);
+      addWall(7.5,-78.5,.55,19,3.4,matBrightChamberWall);
+      addWall(-5.65,-88,3.7,.55,3.4,matBrightChamberWall);
+      addWall(5.65,-88,3.7,.55,3.4,matBrightChamberWall);
       window.sixthDoorOpen = false;
       window.sixthDoor = addWall(0,-87.72,15.0,.72,3.8,matDoor,true);
       window.sixthDoorBlocker = addSolidObstacle(null,0,-87.72,15.6,1.2,true);
 
       // Chamber 6: Sun Seal Chamber
-      addFloor(0,-98.5,15,19);
-      addWall(-7.5,-98.5,.55,19);
-      addWall(7.5,-98.5,.55,19);
-      addWall(0,-108,15,.55);
+      addFloor(0,-98.5,15,19,matBrightChamberFloor);
+      addWall(-7.5,-98.5,.55,19,3.4,matBrightChamberWall);
+      addWall(7.5,-98.5,.55,19,3.4,matBrightChamberWall);
+      addWall(0,-108,15,.55,3.4,matBrightChamberWall);
 
       addPillar(-5.5,4.8); addPillar(5.5,4.8); addPillar(-5.5,-4.8); addPillar(5.5,-4.8);
       addPillar(-5.2,-32.2); addPillar(5.2,-32.2);
