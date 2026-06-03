@@ -4216,7 +4216,6 @@ const wrap = document.getElementById("gameWrap");
 
 
     function makeEmojiVillagerTexture(idx, freed=false){
-      const emoji = villagerEmojis[idx] || "🧑‍🌾";
       const canvas = document.createElement("canvas");
       canvas.width = 512;
       canvas.height = 512;
@@ -4224,36 +4223,163 @@ const wrap = document.getElementById("gameWrap");
 
       ctx.clearRect(0,0,512,512);
 
-      // Soft cut-out card so built-in emoji remains visible on all backgrounds.
-      ctx.fillStyle = freed ? "rgba(236,253,245,.92)" : "rgba(250,245,255,.92)";
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(34,34,444,444,54) : ctx.rect(34,34,444,444);
+      const roundRect = (x,y,w,h,r)=>{
+        ctx.beginPath();
+        if(ctx.roundRect){
+          ctx.roundRect(x,y,w,h,r);
+        }else{
+          ctx.moveTo(x+r,y);
+          ctx.lineTo(x+w-r,y);
+          ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+          ctx.lineTo(x+w,y+h-r);
+          ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+          ctx.lineTo(x+r,y+h);
+          ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+          ctx.lineTo(x,y+r);
+          ctx.quadraticCurveTo(x,y,x+r,y);
+        }
+        ctx.closePath();
+      };
+
+      // Bright card so villagers are obvious even in a 3D chamber.
+      const bg = ctx.createLinearGradient(0,0,0,512);
+      bg.addColorStop(0, freed ? "#dcfce7" : "#f5e8ff");
+      bg.addColorStop(1, freed ? "#86efac" : "#c084fc");
+      ctx.fillStyle = bg;
+      roundRect(28,28,456,456,56);
       ctx.fill();
 
-      ctx.lineWidth = 12;
-      ctx.strokeStyle = freed ? "#22c55e" : "#a855f7";
+      ctx.lineWidth = 13;
+      ctx.strokeStyle = freed ? "#16a34a" : "#7e22ce";
       ctx.stroke();
 
-      // Spellbound / rescued effect
-      ctx.font = "42px Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif";
+      // Spell / freed effects.
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      ctx.font = "44px Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif";
       if(!freed){
-        ctx.fillText("✨",116,106);
-        ctx.fillText("💫",396,124);
-        ctx.fillText("🌙",392,392);
+        ctx.fillText("✨",104,102);
+        ctx.fillText("💫",406,110);
+        ctx.fillText("🔮",408,390);
       }else{
-        ctx.fillText("🌟",116,106);
-        ctx.fillText("😊",392,116);
-        ctx.fillText("✅",392,392);
+        ctx.fillText("🌟",104,102);
+        ctx.fillText("😊",406,110);
+        ctx.fillText("✅",408,390);
       }
 
-      ctx.font = "230px Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif";
-      ctx.fillText(emoji,256,252);
+      // Cartoon villager body.
+      const bodyColours = ["#2563eb","#16a34a","#dc2626","#9333ea","#ea580c","#0f766e"];
+      const hairColours = ["#3b2415","#201008","#5b3419","#111827","#44220d","#9ca3af"];
+      const shirt = bodyColours[idx % bodyColours.length];
+      const hair = hairColours[idx % hairColours.length];
 
+      // Shadow.
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      ctx.beginPath();
+      ctx.ellipse(256,366,105,28,0,0,Math.PI*2);
+      ctx.fill();
+
+      // Body.
+      const bodyGrad = ctx.createLinearGradient(0,238,0,386);
+      bodyGrad.addColorStop(0, shirt);
+      bodyGrad.addColorStop(1, "#1f2937");
+      ctx.fillStyle = bodyGrad;
+      roundRect(165,240,182,150,44);
+      ctx.fill();
+
+      // Neck.
+      ctx.fillStyle = "#f3b37b";
+      roundRect(232,220,48,54,18);
+      ctx.fill();
+
+      // Face.
+      ctx.fillStyle = idx === 5 ? "#d8a46f" : "#f2c08a";
+      ctx.beginPath();
+      ctx.arc(256,176,82,0,Math.PI*2);
+      ctx.fill();
+
+      // Hair / headwear variants.
+      ctx.fillStyle = hair;
+      if(idx === 1 || idx === 3){
+        ctx.beginPath();
+        ctx.arc(256,154,88,Math.PI,Math.PI*2);
+        ctx.fill();
+        ctx.fillRect(174,154,164,34);
+        ctx.beginPath(); ctx.arc(176,192,26,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(336,192,26,0,Math.PI*2); ctx.fill();
+      }else if(idx === 2){
+        // cook cap
+        ctx.fillStyle = "#fff7ed";
+        ctx.beginPath(); ctx.arc(218,116,30,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(256,104,36,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(294,116,30,0,Math.PI*2); ctx.fill();
+        ctx.fillRect(200,126,112,34);
+        ctx.strokeStyle = "#d6d3d1"; ctx.lineWidth = 5; ctx.strokeRect(200,126,112,34);
+        ctx.fillStyle = hair;
+        ctx.beginPath(); ctx.arc(256,157,74,Math.PI,Math.PI*2); ctx.fill();
+      }else if(idx === 4){
+        // cap
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.ellipse(256,125,78,40,0,Math.PI,Math.PI*2);
+        ctx.fill();
+        ctx.fillRect(194,124,124,34);
+        ctx.fillStyle = "#eab308";
+        ctx.beginPath();
+        ctx.ellipse(318,145,44,12,0,0,Math.PI*2);
+        ctx.fill();
+      }else{
+        ctx.beginPath();
+        ctx.arc(256,150,82,Math.PI,Math.PI*2);
+        ctx.fill();
+        ctx.fillRect(180,146,152,32);
+      }
+
+      // Ears.
+      ctx.fillStyle = idx === 5 ? "#d8a46f" : "#f2c08a";
+      ctx.beginPath(); ctx.arc(174,182,18,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(338,182,18,0,Math.PI*2); ctx.fill();
+
+      // Eyes.
+      ctx.fillStyle = "#111827";
+      ctx.beginPath(); ctx.arc(226,178,8,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(286,178,8,0,Math.PI*2); ctx.fill();
+
+      // Smile.
+      ctx.strokeStyle = "#7c2d12";
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.arc(256,202,30,0.15*Math.PI,0.85*Math.PI);
+      ctx.stroke();
+
+      // Arms.
+      ctx.strokeStyle = "#f2c08a";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(174,276); ctx.lineTo(124,322); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(338,276); ctx.lineTo(390,322); ctx.stroke();
+
+      // Spellbound chain / freed sparkle.
+      if(!freed){
+        ctx.strokeStyle = "#7e22ce";
+        ctx.lineWidth = 12;
+        ctx.setLineDash([18,12]);
+        ctx.beginPath();
+        ctx.arc(256,238,122,0.05*Math.PI,0.95*Math.PI);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }else{
+        ctx.fillStyle = "#fef08a";
+        ctx.font = "54px Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif";
+        ctx.fillText("✨",256,260);
+      }
+
+      // Clear label.
       ctx.fillStyle = freed ? "#14532d" : "#4c1d95";
-      ctx.font = "bold 38px Georgia, serif";
-      ctx.fillText(freed ? "FREED!" : "SPELLBOUND",256,440);
+      ctx.font = "bold 35px Georgia, serif";
+      ctx.fillText(freed ? "FREED!" : "VILLAGER " + String(idx+1),256,432);
+      ctx.font = "bold 24px Georgia, serif";
+      ctx.fillText(freed ? "Thank you!" : "Spellbound",256,466);
 
       const tex = new THREE.CanvasTexture(canvas);
       if(THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
@@ -4269,8 +4395,8 @@ const wrap = document.getElementById("gameWrap");
         side: THREE.DoubleSide,
         depthWrite: false
       });
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.75,1.75), mat);
-      plane.position.y = 1.18;
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.15), mat);
+      plane.position.y = 1.32;
       plane.renderOrder = 10;
       plane.userData.isEmojiVillagerPlane = true;
       return plane;
@@ -4296,14 +4422,14 @@ const wrap = document.getElementById("gameWrap");
 
       // Purple spell aura. This disappears when freed.
       const aura = new THREE.Mesh(
-        new THREE.SphereGeometry(1.0,24,14),
+        new THREE.SphereGeometry(1.18,24,14),
         new THREE.MeshBasicMaterial({color:0xa855f7,transparent:true,opacity:.18,depthWrite:false})
       );
       aura.position.y = 1.18;
       group.add(aura);
 
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(.98,.035,12,56),
+        new THREE.TorusGeometry(1.14,.04,12,56),
         new THREE.MeshStandardMaterial({color:0xc084fc,emissive:0x9333ea,emissiveIntensity:.9,transparent:true,opacity:.9})
       );
       ring.rotation.x = Math.PI/2;
@@ -4337,7 +4463,7 @@ const wrap = document.getElementById("gameWrap");
       // Invisible hit target for wand shooting. It follows the villager and is easier
       // to raycast than the imported GLB mesh.
       const hit = new THREE.Mesh(
-        new THREE.SphereGeometry(1.5,24,16),
+        new THREE.SphereGeometry(1.8,24,16),
         new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
       );
       hit.position.y = 1.25;
@@ -7263,4 +7389,4 @@ function openPuzzle(){
   })();
   </script>
 </body>
-      </html>
+        </html>
