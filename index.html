@@ -2479,6 +2479,7 @@ body.quizPageOpen #messageBox{
           <li>In C5, walk near the next villager and press the prompt.</li>
           <li>Solve the multiplication algorithm. The object completes automatically.</li>
           <li>Collect all treasures and the <b>Key of Product</b>.</li>
+          <li>Look out for framed multiplication jokes on the chamber walls.</li>
         </ol>
         <div class="resetWarningBox compactReset">
           <b>Reset Progress</b><br>
@@ -4555,6 +4556,64 @@ function addTablet(){
     }
 
 
+
+    function addJokeFrame(x,y,z,rotationY,title,line1,line2){
+      const canvas = document.createElement("canvas");
+      canvas.width = 900;
+      canvas.height = 420;
+      const ctx = canvas.getContext("2d");
+
+      const grad = ctx.createLinearGradient(0,0,0,420);
+      grad.addColorStop(0,"#fff2b8");
+      grad.addColorStop(.48,"#f7c86a");
+      grad.addColorStop(1,"#a4621a");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,900,420);
+
+      ctx.fillStyle = "#2b1705";
+      ctx.fillRect(28,28,844,364);
+
+      ctx.strokeStyle = "#ffe9a0";
+      ctx.lineWidth = 18;
+      ctx.strokeRect(28,28,844,364);
+
+      ctx.strokeStyle = "#7a4913";
+      ctx.lineWidth = 10;
+      ctx.strokeRect(58,58,784,304);
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.fillStyle = "#fff0a8";
+      ctx.font = "bold 48px Georgia, serif";
+      ctx.fillText(title,450,112);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 42px Arial, sans-serif";
+      ctx.fillText(line1,450,216);
+      ctx.fillText(line2,450,278);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      if(THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+
+      const frame = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.6,1.68),
+        new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide})
+      );
+      frame.position.set(x,y,z);
+      frame.rotation.y = rotationY;
+      frame.renderOrder = 18;
+      scene.add(frame);
+
+      // A small warm spotlight so the joke frame is readable in the chamber.
+      const light = new THREE.PointLight(0xffd98a, LOW_POWER ? .28 : .42, 4.5, 2.2);
+      light.position.set(x, y + .15, z + (Math.cos(rotationY) * .25));
+      scene.add(light);
+
+      return frame;
+    }
+
+
     function addBridgeArrowSign(){
       const canvas = document.createElement("canvas");
       canvas.width = 512; canvas.height = 256;
@@ -4764,6 +4823,15 @@ function addTablet(){
       addSpellboundVillager(3,-4.2,-81.0);
       addSpellboundVillager(4,0,-82.2);
       addSpellboundVillager(5,4.2,-81.0);
+
+
+      // Multiplication joke frames on the chamber walls.
+      addJokeFrame(-7.18,2.35,2.6,Math.PI/2,"MULTIPLY SMILE","Why was 6 afraid of 7?","Because 7 × 8 = 56!");
+      addJokeFrame(7.18,2.35,3.0,-Math.PI/2,"MATH JOKE","Why did 3 bring a ladder?","To reach the higher multiples!");
+      addJokeFrame(-7.18,2.35,-25.8,Math.PI/2,"SCARAB JOKE","Why did the beetle study times tables?","To find the product quickly!");
+      addJokeFrame(7.18,2.35,-30.4,-Math.PI/2,"PYRAMID PUN","What do factors build?","A product pyramid!");
+      addJokeFrame(-7.18,2.35,-45.2,Math.PI/2,"BRIDGE JOKE","Why did 9 cross the bridge?","To meet 9 × 8 on the other side!");
+      addJokeFrame(7.18,2.35,-78.2,-Math.PI/2,"WAND JOKE","What spell fixes hard sums?","Multipli-CAN!");
 
       addHieroglyphPanel(-7.18,-1.8,Math.PI/2,"𓃭 𓂀 𓆣\nSOLVE");
       addHieroglyphPanel(7.18,-2.2,-Math.PI/2,"𓋹 𓊽 𓎛\nESCAPE");
