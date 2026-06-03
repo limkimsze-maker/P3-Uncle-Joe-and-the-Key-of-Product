@@ -2781,21 +2781,21 @@ const wrap = document.getElementById("gameWrap");
 
     function applyProgressVisuals(){
       if(window.firstDoor){
-        setDoorVisual(window.firstDoor,4.3,1.9,doorOpen);
-        if(window.firstDoorLabel) window.firstDoorLabel.position.y = doorOpen ? 5.25 : 1.85;
+        setDoorVisual(window.firstDoor,8.8,1.9,doorOpen);
+        if(window.firstDoorLabel) window.firstDoorLabel.position.y = doorOpen ? 8.8 : 1.85;
       }
       if(window.firstDoorBlocker) window.firstDoorBlocker.active = !doorOpen;
-      setDoorVisual(window.secretDoor,5.2,1.9,!!window.secondDoorOpen);
+      setDoorVisual(window.secretDoor,8.8,1.9,!!window.secondDoorOpen);
       if(window.secretDoorBlocker) window.secretDoorBlocker.active = !window.secondDoorOpen;
-      setDoorVisual(window.thirdDoor,5.8,1.8,!!window.thirdDoorOpen);
+      setDoorVisual(window.thirdDoor,8.8,1.8,!!window.thirdDoorOpen);
       if(window.thirdDoorBlocker) window.thirdDoorBlocker.active = !window.thirdDoorOpen;
       if(window.bridgeArrowSign){
         window.bridgeArrowSign.visible = !!window.thirdDoorOpen;
         if(window.bridgeArrowSign.userData && window.bridgeArrowSign.userData.blocker) window.bridgeArrowSign.userData.blocker.active = !!window.thirdDoorOpen;
       }
-      setDoorVisual(window.fourthDoor,5.8,1.8,!!window.fourthDoorOpen);
+      setDoorVisual(window.fourthDoor,8.8,1.8,!!window.fourthDoorOpen);
       if(window.fourthDoorBlocker) window.fourthDoorBlocker.active = !window.fourthDoorOpen;
-      setDoorVisual(window.fifthDoor,5.8,1.8,!!window.fifthDoorOpen);
+      setDoorVisual(window.fifthDoor,8.8,1.8,!!window.fifthDoorOpen);
       if(window.fifthDoorBlocker) window.fifthDoorBlocker.active = !window.fifthDoorOpen;
       if(window.villagerHallArrowSign){
         window.villagerHallArrowSign.visible = !!window.fifthDoorOpen;
@@ -4871,7 +4871,7 @@ function openPuzzle(){
       if(window.thirdDoor){
         window.thirdDoor.active = false;
         if(window.thirdDoor.mesh){
-          window.thirdDoor.mesh.position.y = 5.8; // clearly raised
+          window.thirdDoor.mesh.position.y = 8.8; // clearly raised
           window.thirdDoor.mesh.visible = true;
         }
       }
@@ -4898,7 +4898,7 @@ function openPuzzle(){
       if(window.fourthDoorBlocker) window.fourthDoorBlocker.active = false;
       if(window.fourthDoor){
         window.fourthDoor.active = false;
-        if(window.fourthDoor.mesh) window.fourthDoor.mesh.position.y = 5.8;
+        if(window.fourthDoor.mesh) window.fourthDoor.mesh.position.y = 8.8;
       }
       sapphireVisible = true;
       if(window.sapphireObj){
@@ -4924,7 +4924,7 @@ function openPuzzle(){
       if(window.fifthDoorBlocker) window.fifthDoorBlocker.active = false;
       if(window.fifthDoor){
         window.fifthDoor.active = false;
-        if(window.fifthDoor.mesh) window.fifthDoor.mesh.position.y = 5.8;
+        if(window.fifthDoor.mesh) window.fifthDoor.mesh.position.y = 8.8;
       }
       showMessage("The Spellbound Villagers Hall is open. Walk straight ahead and help the villagers.");
       playStoneMove();
