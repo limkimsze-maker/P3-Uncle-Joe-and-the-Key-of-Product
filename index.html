@@ -3482,6 +3482,46 @@ const wrap = document.getElementById("gameWrap");
       showMessage("Back at floor level. Continue the mission.");
     }
 
+    function force3DChamberMode(){
+      // Strong reset from algorithm/page-scroll mode back to the 3D canvas.
+      // This prevents Android/Fold/browser viewport CSS from making the 3D view look broken.
+      modalShade.style.display = "none";
+      modalShade.classList.remove("showScroll");
+      modalShade.classList.remove("pageScrollMode");
+      document.documentElement.classList.remove("quizPageOpen");
+      document.body.classList.remove("quizPageOpen");
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      window.scrollTo(0,0);
+      updateAlgorithmButtonVisibility();
+      resize3DRendererSoon();
+    }
+
+    function resize3DRendererSoon(){
+      const doResize = ()=>{
+        try{
+          const w = window.innerWidth || document.documentElement.clientWidth || 800;
+          const h = window.innerHeight || document.documentElement.clientHeight || 600;
+          camera.aspect = w / Math.max(1,h);
+          camera.updateProjectionMatrix();
+          renderer.setSize(w,h,false);
+        }catch(e){}
+      };
+      doResize();
+      requestAnimationFrame(doResize);
+      setTimeout(doResize,80);
+      setTimeout(doResize,260);
+    }
+
+    function setPlayerFloorView(x,z,ry=0){
+      pendingFloorRestoreAfterDoorView = false;
+      camera.position.set(x,1.65,z);
+      camera.rotation.set(0,ry,0);
+      resize3DRendererSoon();
+    }
+
 
     function ensureDoorOpeningAudio(){
       if(doorOpeningAudio) return doorOpeningAudio;
@@ -3576,8 +3616,13 @@ const wrap = document.getElementById("gameWrap");
           if(blocker) blocker.active = false;
           syncDoorBlockers();
           doorCinematicActive = false;
-          pendingFloorRestoreAfterDoorView = true;
-          showMessage("Door opened. Touch the screen or move to return to floor level.");
+          if(opts.restoreAfterOpen){
+            setPlayerFloorView(opts.restoreAfterOpen.x, opts.restoreAfterOpen.z, opts.restoreAfterOpen.ry || 0);
+          }else{
+            pendingFloorRestoreAfterDoorView = true;
+            resize3DRendererSoon();
+            showMessage("Door opened. Touch the screen or move to return to floor level.");
+          }
           if(typeof onComplete === "function") onComplete();
         }
       }
@@ -6125,6 +6170,9 @@ function addTablet(){
 
     // Jump checkpoint functions removed for pupil version.
 
+    window.addEventListener("resize", resize3DRendererSoon, {passive:true});
+    window.addEventListener("orientationchange", resize3DRendererSoon, {passive:true});
+
     const moveKeys = {forward:false,back:false,left:false,right:false,lookLeft:false,lookRight:false,lookUp:false,lookDown:false};
     function setMoveKey(action,value){ if(action in moveKeys) moveKeys[action]=value; }
 
@@ -6577,12 +6625,7 @@ function openPuzzle(){
       setTimeout(()=>setActiveEntry(document.getElementById("currentDigitInput")),60);
     }
     function closePuzzle(){
-      modalShade.style.display = "none";
-      modalShade.classList.remove("showScroll");
-      modalShade.classList.remove("pageScrollMode");
-      document.documentElement.classList.remove("quizPageOpen");
-      document.body.classList.remove("quizPageOpen");
-      updateAlgorithmButtonVisibility();
+      force3DChamberMode();
       setTimeout(updateShineButtonVisibility, 60);
     }
     document.getElementById("btnClosePuzzle").addEventListener("click", closePuzzle);
@@ -6598,11 +6641,14 @@ function openPuzzle(){
         blocker: window.firstDoorBlocker,
         doorZ: -7.72,
         cameraZ: -3.0,
+        restoreAfterOpen: {x:0, z:-5.4, ry:0},
         message: "Watch carefully... the door is opening!",
         onComplete: ()=>{
           rubyVisible = true;
           if(window.rubyObj) window.rubyObj.group.visible = true;
-          showMessage("Starting Chamber cleared! Collect the Ruby of Product.");
+          force3DChamberMode();
+          setPlayerFloorView(0,-5.4,0);
+          showMessage("Starting Chamber cleared! Walk forward into the Torch Corridor and collect the Ruby of Product.");
           updateTorchGalleryProgression?.();
           saveProgress();
         }
