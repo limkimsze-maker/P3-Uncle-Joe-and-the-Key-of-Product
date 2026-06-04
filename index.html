@@ -3329,6 +3329,7 @@ const wrap = document.getElementById("gameWrap");
     let soundOn = true;
     let audioCtx = null;
     let doorOpen = false;
+    let rubySystemPretendCollected = false;
     let rubyVisible = false;
     let rubyCollected = false;
     let topazVisible = false;
@@ -3372,6 +3373,7 @@ const wrap = document.getElementById("gameWrap");
     let currentTarget = null;
     let doorCinematicActive = false;
     let pendingFloorRestoreAfterDoorView = false;
+    let firstDoorAutoOpenScheduled = false;
     var TORCH_TOTAL = 6;
 
     const DOOR_OPEN_SOUND_URL = "https://raw.githubusercontent.com/limkimsze-maker/P3-Uncle-Joe-and-the-Key-of-Product/976802ad774b985452e6b06c9945e6378bcd1822/krnbeatz-tectonic-passage-418836.mp3";
@@ -3382,7 +3384,7 @@ const wrap = document.getElementById("gameWrap");
     function progressSnapshot(){
       return {
         doorOpen,
-        rubyVisible, rubyCollected,
+        rubyVisible, rubyCollected, rubySystemPretendCollected,
         secondDoorOpen: !!window.secondDoorOpen,
         topazVisible, topazCollected,
         thirdDoorOpen: !!window.thirdDoorOpen,
@@ -3691,7 +3693,7 @@ const wrap = document.getElementById("gameWrap");
       // Villagers arrow sign removed.
       syncDoorBlockers();
 
-      if(window.rubyObj) window.rubyObj.group.visible = !!(rubyVisible && !rubyCollected);
+      if(window.rubyObj) window.rubyObj.group.visible = !!(rubyVisible && (!rubyCollected || rubySystemPretendCollected));
       if(window.topazObj) window.topazObj.group.visible = !!(topazVisible && !topazCollected);
       if(window.emeraldObj) window.emeraldObj.group.visible = !!(emeraldVisible && !emeraldCollected);
       if(window.sapphireObj) window.sapphireObj.group.visible = !!(sapphireVisible && !sapphireCollected);
@@ -3841,7 +3843,7 @@ const wrap = document.getElementById("gameWrap");
       const data = loadProgressData();
       if(!data) return false;
       doorOpen = !!data.doorOpen;
-      rubyVisible = !!data.rubyVisible; rubyCollected = !!data.rubyCollected;
+      rubyVisible = !!data.rubyVisible; rubyCollected = !!data.rubyCollected; rubySystemPretendCollected = !!data.rubySystemPretendCollected; rubySystemPretendCollected = !!data.rubySystemPretendCollected;
       window.secondDoorOpen = !!data.secondDoorOpen;
       topazVisible = !!data.topazVisible; topazCollected = !!data.topazCollected;
       window.thirdDoorOpen = !!data.thirdDoorOpen;
@@ -3947,21 +3949,21 @@ const wrap = document.getElementById("gameWrap");
       roughness:.82,
       metalness:.03,
       emissive:0x2f1705,
-      emissiveIntensity:.42
+      emissiveIntensity:.85
     });
     const matC3Wall = new THREE.MeshStandardMaterial({
       color:0xa4743f,
       roughness:.88,
       metalness:.02,
       emissive:0x2d1606,
-      emissiveIntensity:.48
+      emissiveIntensity:.9
     });
     const matC3Door = new THREE.MeshStandardMaterial({
       color:0x9a6a35,
       roughness:.84,
       metalness:.06,
       emissive:0x3a1c06,
-      emissiveIntensity:.58
+      emissiveIntensity:1.0
     });
 
     function addAmbient(){
@@ -5372,6 +5374,10 @@ function showLightBeam(){
 
     function openScarabQuestion(idx){
       if(idx == null || scarabChallengeDone.has(idx)) return;
+      if(!canAccessScarabQuestions()){
+        showMessage("Complete the Torch Corridor first, open the door, and collect the Topaz of Tens before solving scarabs.");
+        return;
+      }
       activeQuizMode = "scarab";
       activeScarabIndex = idx;
       quiz.stageIndex = 0;
@@ -5749,48 +5755,108 @@ function addTablet(){
 
     function addRuby(){
       const group = new THREE.Group();
-      group.position.set(0,1.05,-10.2);
+      group.position.set(0,1.35,-10.2);
       group.visible = false;
-      group.scale.set(1.28,1.28,1.28);
-      const ruby = new THREE.Mesh(new THREE.OctahedronGeometry(.62,0), matRuby);
+      group.scale.set(1.65,1.65,1.65);
+
+      const rubyMat = new THREE.MeshStandardMaterial({
+        color:0xff1f6d,
+        roughness:.18,
+        metalness:.18,
+        emissive:0xff0f5a,
+        emissiveIntensity:1.45
+      });
+
+      const ruby = new THREE.Mesh(new THREE.OctahedronGeometry(.78,0), rubyMat);
+      ruby.position.set(0,.05,0);
       ruby.castShadow = !LOW_POWER;
       group.add(ruby);
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(.78,.025,10,40), new THREE.MeshStandardMaterial({color:0xffe28a,emissive:0xffb833,emissiveIntensity:.9,roughness:.25}));
-      halo.rotation.x = Math.PI/2;
-      group.add(halo);
-      const light = new THREE.PointLight(0xff2d66, LOW_POWER ? 3.2 : 4.2, 12, 1.35);
-      light.position.set(0,.55,0);
-      group.add(light);
 
+      const core = new THREE.Mesh(
+        new THREE.OctahedronGeometry(.46,0),
+        new THREE.MeshBasicMaterial({color:0xff77aa,transparent:true,opacity:.72})
+      );
+      core.position.set(0,.05,.03);
+      group.add(core);
+
+      const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(1.02,.04,14,72),
+        new THREE.MeshStandardMaterial({
+          color:0xffe28a,
+          emissive:0xffb833,
+          emissiveIntensity:1.05,
+          roughness:.25,
+          transparent:true,
+          opacity:.95
+        })
+      );
+      halo.rotation.x = Math.PI/2;
+      halo.position.y = -.02;
+      group.add(halo);
+
+      // Small label only. Do not let the sign replace or hide the ruby.
       const rubyCanvas = document.createElement("canvas");
-      rubyCanvas.width = 640;
-      rubyCanvas.height = 180;
+      rubyCanvas.width = 520;
+      rubyCanvas.height = 120;
       const rctx = rubyCanvas.getContext("2d");
       rctx.fillStyle = "#2a050b";
-      rctx.fillRect(0,0,640,180);
+      rctx.fillRect(0,0,520,120);
       rctx.strokeStyle = "#ff9ab3";
-      rctx.lineWidth = 12;
-      rctx.strokeRect(16,16,608,148);
+      rctx.lineWidth = 8;
+      rctx.strokeRect(10,10,500,100);
       rctx.textAlign = "center";
       rctx.textBaseline = "middle";
       rctx.fillStyle = "#ffe5ec";
-      rctx.font = "bold 46px Georgia,serif";
-      rctx.fillText("RUBY OF PRODUCT",320,78);
-      rctx.font = "bold 26px Georgia,serif";
-      rctx.fillText("Tap prompt to collect",320,128);
+      rctx.font = "bold 34px Georgia,serif";
+      rctx.fillText("RUBY OF PRODUCT",260,60);
       const rubyTex = new THREE.CanvasTexture(rubyCanvas);
       if(THREE.sRGBEncoding) rubyTex.encoding = THREE.sRGBEncoding;
+
       const rubyLabel = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.65,.76),
-        new THREE.MeshBasicMaterial({map:rubyTex,transparent:true,side:THREE.DoubleSide})
+        new THREE.PlaneGeometry(2.15,.50),
+        new THREE.MeshBasicMaterial({
+          map:rubyTex,
+          transparent:true,
+          side:THREE.DoubleSide,
+          depthWrite:false
+        })
       );
-      rubyLabel.position.set(0,1.18,.04);
+      rubyLabel.position.set(0,1.35,.18);
+      rubyLabel.renderOrder = 5;
       group.add(rubyLabel);
 
+      const base = new THREE.Mesh(
+        new THREE.CylinderGeometry(.7,.9,.14,32),
+        new THREE.MeshStandardMaterial({
+          color:0x6b3f11,
+          roughness:.55,
+          metalness:.12,
+          emissive:0x3b1603,
+          emissiveIntensity:.2
+        })
+      );
+      base.position.y = -.86;
+      group.add(base);
+
+      const light = new THREE.PointLight(0xff2d66, LOW_POWER ? 4.8 : 6.2, 15, 1.25);
+      light.position.set(0,.65,.25);
+      group.add(light);
+
       scene.add(group);
-      const obj = {id:"ruby",group,position:new THREE.Vector3(0,1.05,-10.2),radius:4.8,label:"Collect Ruby of Product"};
+      const obj = {
+        id:"ruby",
+        group,
+        position:new THREE.Vector3(0,1.35,-10.2),
+        radius:7.2,
+        label:"Collect Ruby of Product",
+        ruby,
+        core,
+        halo,
+        light,
+        rubyLabel
+      };
       interactables.push(obj);
-      animated.push({type:"ruby",group,ruby,halo,light,t:0});
+      animated.push({type:"ruby",group,ruby,core,halo,light,t:0});
       return obj;
     }
 
@@ -5940,7 +6006,7 @@ function addTablet(){
       }
 
       // Extra warm light so Chamber 3 stays bright even on mobile low-power mode.
-      addBrightChamberLight(0,-28.5,2.9,22);
+      addBrightChamberLight(0,-28.5,3.6,26);
       addBrightChamberLight(-4.8,-28.8,1.55,12);
       addBrightChamberLight(4.8,-28.8,1.55,12);
 
@@ -6006,11 +6072,123 @@ function addTablet(){
     }
 
 
+
+    function attachOpaqueC2ToC3Seal(){
+      if(!window.secretDoor || !window.secretDoor.mesh || window.c2C3OpaqueSeal) return;
+      const mat = new THREE.MeshBasicMaterial({
+        color:0x5b3514,
+        side:THREE.DoubleSide,
+        transparent:false,
+        depthWrite:true,
+        depthTest:true
+      });
+
+      const seal = new THREE.Mesh(new THREE.BoxGeometry(15.15,3.55,.09), mat);
+      // Child of the actual door slab, so it raises together with the secret door.
+      seal.position.set(0,0,.42);
+      seal.renderOrder = 41;
+      window.secretDoor.mesh.add(seal);
+      window.c2C3OpaqueSeal = seal;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 900;
+      canvas.height = 260;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#2a1305";
+      ctx.fillRect(0,0,900,260);
+      ctx.strokeStyle = "#ffd86b";
+      ctx.lineWidth = 16;
+      ctx.strokeRect(22,22,856,216);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff0a8";
+      ctx.font = "bold 56px Georgia,serif";
+      ctx.fillText("SCARAB CHAMBER",450,94);
+      ctx.font = "bold 33px Georgia,serif";
+      ctx.fillText("Complete 6 torches and collect Topaz",450,166);
+      ctx.font = "bold 26px Georgia,serif";
+      ctx.fillText("before entering",450,214);
+      const tex = new THREE.CanvasTexture(canvas);
+      if(THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+
+      const sign = new THREE.Mesh(
+        new THREE.PlaneGeometry(4.8,1.38),
+        new THREE.MeshBasicMaterial({map:tex,transparent:false,side:THREE.DoubleSide,depthWrite:true,depthTest:true})
+      );
+      sign.position.set(0,.05,.48);
+      sign.renderOrder = 42;
+      window.secretDoor.mesh.add(sign);
+      window.c2C3OpaqueSealSign = sign;
+    }
+
+
+
+    function addGuaranteedBrightRoomSkin(cx,cz,w,d,name="Bright Chamber"){
+      // Visual-only unlit skins. No collision. Keeps rooms bright even on mobile low-power WebGL.
+      const floorMat = new THREE.MeshBasicMaterial({color:0xd7a95f,side:THREE.DoubleSide});
+      const wallMat = new THREE.MeshBasicMaterial({color:0xb9854d,side:THREE.DoubleSide});
+
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(w-.38,d-.38), floorMat);
+      floor.rotation.x = -Math.PI/2;
+      floor.position.set(cx,.012,cz);
+      floor.renderOrder = 0;
+      scene.add(floor);
+
+      const left = new THREE.Mesh(new THREE.PlaneGeometry(d-.55,3.22), wallMat);
+      left.rotation.y = Math.PI/2;
+      left.position.set(cx-w/2+.28,1.62,cz);
+      left.renderOrder = 0;
+      scene.add(left);
+
+      const right = new THREE.Mesh(new THREE.PlaneGeometry(d-.55,3.22), wallMat);
+      right.rotation.y = -Math.PI/2;
+      right.position.set(cx+w/2-.28,1.62,cz);
+      right.renderOrder = 0;
+      scene.add(right);
+
+      const frontL = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(1,(w-4.2)/2),3.22), wallMat);
+      frontL.position.set(cx-(w/4+1.05),1.62,cz+d/2-.28);
+      frontL.renderOrder = 0;
+      scene.add(frontL);
+
+      const frontR = frontL.clone();
+      frontR.position.x = cx+(w/4+1.05);
+      scene.add(frontR);
+
+      const backL = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(1,(w-4.2)/2),3.22), wallMat);
+      backL.position.set(cx-(w/4+1.05),1.62,cz-d/2+.28);
+      backL.rotation.y = Math.PI;
+      backL.renderOrder = 0;
+      scene.add(backL);
+
+      const backR = backL.clone();
+      backR.position.x = cx+(w/4+1.05);
+      scene.add(backR);
+
+      const fill = new THREE.PointLight(0xffd28a, LOW_POWER ? 2.6 : 3.4, Math.max(w,d)+8, 1.35);
+      fill.position.set(cx,2.75,cz);
+      scene.add(fill);
+
+      return {floor,left,right,frontL,frontR,backL,backR,fill,name};
+    }
+
+    function addGuaranteedBrightNonTorchChambers(){
+      // Chamber 2 / Torch Corridor is deliberately excluded.
+      window.brightRoomSkins = window.brightRoomSkins || [];
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,0,15,15,"Starting Chamber"));
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,-28.5,15,15,"Scarab Puzzle"));
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,-49.0,15,22,"Bridge Crossing"));
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,-64.5,15,8,"Magic Wand Antechamber"));
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,-78.5,15,19,"Spellbound Villagers"));
+      window.brightRoomSkins.push(addGuaranteedBrightRoomSkin(0,-98.5,15,19,"Sun Seal Chamber"));
+    }
+
+
     function buildWorld(){
       addAmbient();
       // Bright chambers; Torch Corridor remains deliberately dark.
       addBrightChamberLight(0,0,1.65,17);
-      addBrightChamberLight(0,-28.5,1.75,17);
+      addBrightChamberLight(0,-28.5,3.2,24);
       addBrightChamberLight(0,-49,1.65,19);
       addBrightChamberLight(0,-64.5,1.45,15);
       addBrightChamberLight(0,-78.5,1.75,18);
@@ -6066,6 +6244,7 @@ function addTablet(){
       window.secondDoorOpen = false;
       window.secretDoor = addWall(0,-21,15.0,.72,3.8,matDoor,true);
       window.secretDoorBlocker = addSolidObstacle(null,0,-21,15.6,1.2,true);
+      attachOpaqueC2ToC3Seal();
       window.c2ToC3DoorLabel = addC2ToC3DoorLabel();
 
       restoreChamber3Visuals();
@@ -6189,6 +6368,8 @@ function addTablet(){
       addWall(0,-64.5,15,8,.22,matBlack,false).mesh.position.y = 3.52;
       addWall(0,-78.5,15,19,.22,matBlack,false).mesh.position.y = 3.52;
       addWall(0,-98.5,15,19,.22,matBlack,false).mesh.position.y = 3.52;
+
+      addGuaranteedBrightNonTorchChambers();
     }
     buildWorld();
     applySavedProgress();
@@ -6345,7 +6526,18 @@ function addTablet(){
       });
     }
 
+
+    function canAccessScarabQuestions(){
+      return !!(
+        window.secondDoorOpen &&
+        topazCollected &&
+        torchChallengeDone.size >= TORCH_TOTAL &&
+        !emeraldCollected
+      );
+    }
+
     function currentScarabPromptTarget(){
+      if(!canAccessScarabQuestions()) return null;
       const idx = scarabChallengeDone.size;
       const s = scarabs[idx];
       if(!s || !s.alive || emeraldCollected || !camera) return null;
@@ -6392,11 +6584,12 @@ function addTablet(){
     }
 
     function updateInteraction(){
+      ensureRubyVisibleBeforeCollected();
       updateScarabPromptVisuals();
       currentTarget = null;
       let nearest = Infinity;
       for(const item of interactables){
-        if(item.id==="ruby" && (!rubyVisible || rubyCollected)) continue;
+        if(item.id==="ruby" && (!rubyVisible || (rubyCollected && !rubySystemPretendCollected))) continue;
         if(item.id==="topaz" && (!topazVisible || topazCollected)) continue;
         if(item.id==="emerald" && (!emeraldVisible || emeraldCollected)) continue;
         if(item.id==="sapphire" && (!sapphireVisible || sapphireCollected)) continue;
@@ -6408,7 +6601,7 @@ function addTablet(){
         if(String(item.id || "").startsWith("scarabBtn")){
           const idx = Number(String(item.id).replace("scarabBtn",""));
           const inOrNearC3 = camera && camera.position.z < -18.5 && camera.position.z > -38.5;
-          if(!inOrNearC3 || emeraldCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
+          if(!canAccessScarabQuestions() || !inOrNearC3 || emeraldCollected || scarabChallengeDone.has(idx) || idx !== scarabChallengeDone.size) continue;
         }
         if(String(item.id || "").startsWith("sandBtn")){
           const idx = Number(String(item.id).replace("sandBtn",""));
@@ -6481,6 +6674,11 @@ function addTablet(){
       }
       if(String(currentTarget.id || "").startsWith("scarabBtn")){
         const idx = Number(String(currentTarget.id).replace("scarabBtn",""));
+        if(!canAccessScarabQuestions()){
+          showMessage("Complete the Torch Corridor first, open the door, and collect the Topaz of Tens before solving scarabs.");
+          currentTarget = null;
+          return;
+        }
         if(scarabChallengeDone.has(idx)){
           showMessage("This scarab is already lit. Proceed to the next scarab.");
           return;
@@ -6664,10 +6862,62 @@ function openPuzzle(){
       setTimeout(updateShineButtonVisibility, 60);
     }
     document.getElementById("btnClosePuzzle").addEventListener("click", closePuzzle);
+    function pretendRubyCollectedForVisuals(){
+      // Visual-only fix: the scene becomes stable after Ruby is collected.
+      // We apply that stable state early, but keep the actual Ruby collectable.
+      if(rubyCollected) return;
+      rubySystemPretendCollected = true;
 
-    
+      // Run the harmless visual/HUD stabilisers that normally happen after collection.
+      updateJewelCollection?.();
+      updateTorchGalleryProgression?.();
+      updateTorchHud?.();
+      syncDoorBlockers?.();
+
+      // Keep the Ruby physically present for the pupil to collect.
+      rubyVisible = true;
+      if(window.rubyObj){
+        window.rubyObj.group.visible = true;
+        window.rubyObj.group.position.set(0,1.35,-10.2);
+        window.rubyObj.group.scale.set(1.65,1.65,1.65);
+        window.rubyObj.position.set(0,1.35,-10.2);
+        window.rubyObj.radius = 7.2;
+        if(window.rubyObj.ruby) window.rubyObj.ruby.visible = true;
+        if(window.rubyObj.core) window.rubyObj.core.visible = true;
+        if(window.rubyObj.halo) window.rubyObj.halo.visible = true;
+        if(window.rubyObj.light) window.rubyObj.light.intensity = LOW_POWER ? 4.8 : 6.2;
+      }
+    }
+
+
+
+    function ensureRubyVisibleBeforeCollected(){
+      // Hard guarantee: once the first door is open, Ruby must be visible and collectable
+      // until the pupil actually taps "Collect Ruby of Product".
+      if(!doorOpen || rubyCollected || !window.rubyObj) return;
+
+      rubyVisible = true;
+      rubySystemPretendCollected = true;
+
+      const rz = -10.2;
+      window.rubyObj.group.visible = true;
+      window.rubyObj.group.position.set(0,1.05,rz);
+      window.rubyObj.group.scale.set(1.55,1.55,1.55);
+      window.rubyObj.position.set(0,1.05,rz);
+      window.rubyObj.radius = 7.2;
+
+      // Keep the first door really open, so the Ruby is not hidden behind the slab.
+      if(window.firstDoor){
+        window.firstDoor.active = false;
+        if(window.firstDoor.mesh) window.firstDoor.mesh.position.y = 8.8;
+      }
+      if(window.firstDoorLabel) window.firstDoorLabel.position.y = 8.8;
+      if(window.firstDoorBlocker) window.firstDoorBlocker.active = false;
+    }
+
 
     function refreshVisualStateBeforeRubyCollection(){
+      // GOOD PRE-RUBY VIEW LOCK: camera should stay before the Ruby, not inside it.
       // The Ruby collection path already proves the visual state becomes normal.
       // This applies the same 3D/canvas stabilisation BEFORE the Ruby is collected,
       // while keeping the Ruby visible and collectable.
@@ -6682,9 +6932,14 @@ function openPuzzle(){
       if(window.firstDoorBlocker) window.firstDoorBlocker.active = false;
       if(window.rubyObj && !rubyCollected){
         window.rubyObj.group.visible = true;
-        window.rubyObj.group.position.set(0,1.05,-10.2);
-        window.rubyObj.position.set(0,1.05,-10.2);
-        window.rubyObj.radius = 4.8;
+        window.rubyObj.group.position.set(0,1.35,-10.2);
+        window.rubyObj.group.scale.set(1.65,1.65,1.65);
+        window.rubyObj.position.set(0,1.35,-10.2);
+        window.rubyObj.radius = 7.2;
+        if(window.rubyObj.ruby) window.rubyObj.ruby.visible = true;
+        if(window.rubyObj.core) window.rubyObj.core.visible = true;
+        if(window.rubyObj.halo) window.rubyObj.halo.visible = true;
+        if(window.rubyObj.light) window.rubyObj.light.intensity = LOW_POWER ? 4.8 : 6.2;
       }
       syncDoorBlockers();
       updateTorchGalleryProgression?.();
@@ -6700,6 +6955,7 @@ function openPuzzle(){
         }
       });
 
+      ensureRubyVisibleBeforeCollected();
       resize3DRendererSoon();
     }
 
@@ -6707,9 +6963,10 @@ function openPuzzle(){
     function firstDoorPostOpenWatchdog(){
       if(!doorOpen || !window.firstDoor || !window.rubyObj) return;
       refreshVisualStateBeforeRubyCollection();
-      if(camera.position.z > -8.2 || camera.position.z < -11.6){
-        setPlayerFloorView(0,-9.35,0);
+      if(camera.position.z > -6.2 || camera.position.z < -7.7){
+        setPlayerFloorView(0,-6.9,0);
       }
+      ensureRubyVisibleBeforeCollected();
       showMessage("Starting Chamber cleared! You are back at floor level. Collect the Ruby of Product.");
     }
 
@@ -6724,13 +6981,13 @@ function openPuzzle(){
         blocker: window.firstDoorBlocker,
         doorZ: -7.72,
         cameraZ: -3.0,
-        restoreAfterOpen: {x:0, z:-9.35, ry:0},
+        restoreAfterOpen: {x:0, z:-6.9, ry:0},
         message: "Watch carefully... the door is opening!",
         onComplete: ()=>{
           rubyVisible = true;
-          if(window.rubyObj) window.rubyObj.group.visible = true;
           refreshVisualStateBeforeRubyCollection();
-          setPlayerFloorView(0,-9.35,0);
+          ensureRubyVisibleBeforeCollected();
+          setPlayerFloorView(0,-6.9,0);
           showMessage("Starting Chamber cleared! You are back at floor level. Collect the Ruby of Product.");
           setTimeout(firstDoorPostOpenWatchdog,120);
           setTimeout(firstDoorPostOpenWatchdog,520);
@@ -6926,13 +7183,16 @@ function openPuzzle(){
     }
 
     function collectRuby(){
-      if(rubyCollected) return;
+      // If the system was pretending Ruby had been collected for visual stability,
+      // this tap now turns it into a real collection.
+      if(rubyCollected && !rubySystemPretendCollected) return;
+      rubySystemPretendCollected = false;
       rubyCollected = true;
       updateJewelCollection();
       showMessage("You found the Ruby of Product! Continue along the Torch Corridor.");
       playVictory();
       burstConfetti(true);
-      window.rubyObj.group.visible = false;
+      if(window.rubyObj) window.rubyObj.group.visible = false;
       saveProgress();
     }
 
@@ -6945,6 +7205,7 @@ function openPuzzle(){
       playVictory();
       burstConfetti(true);
       window.topazObj.group.visible = false;
+      applyProgressVisuals();
       saveProgress();
     }
 
@@ -7161,11 +7422,22 @@ function openPuzzle(){
           if(a.light) a.light.intensity = 2.8 + Math.sin(elapsed*3.2)*.4;
         }
         if(a.type==="ruby" && a.group.visible){
-          a.group.position.y = 1.05 + Math.sin(elapsed*2)*.14;
-          a.ruby.rotation.y += dt*1.35;
-          a.ruby.rotation.x += dt*.55;
-          a.halo.rotation.z += dt*1.05;
-          a.light.intensity = 1.8 + Math.sin(elapsed*4)*.35;
+          a.group.position.y = 1.35 + Math.sin(elapsed*2)*.12;
+          if(a.ruby){
+            a.ruby.visible = true;
+            a.ruby.rotation.y += dt*1.45;
+            a.ruby.rotation.x += dt*.58;
+          }
+          if(a.core){
+            a.core.visible = true;
+            a.core.rotation.y -= dt*1.8;
+            a.core.rotation.x += dt*.75;
+          }
+          if(a.halo){
+            a.halo.visible = true;
+            a.halo.rotation.z += dt*1.05;
+          }
+          if(a.light) a.light.intensity = (LOW_POWER ? 4.2 : 5.8) + Math.sin(elapsed*4)*.55;
         }
         if(a.type==="magicWand" && a.group.visible){
           a.t += dt;
@@ -7764,6 +8036,18 @@ function openPuzzle(){
       loadQuestion(randomQuestionForStage(currentStage()));
     }
 
+
+    function scheduleFirstDoorAutoOpen(){
+      if(firstDoorAutoOpenScheduled || doorOpen || activeQuizMode !== "starting") return;
+      firstDoorAutoOpenScheduled = true;
+      setTimeout(()=>{
+        if(!doorOpen){
+          closePuzzle();
+          openDoor();
+        }
+      }, 850);
+    }
+
     function nextQuizQuestion(){
       if(!quiz.questionComplete) return;
 
@@ -7920,7 +8204,8 @@ function openPuzzle(){
             }
           }, 650);
         }else if(totalQuestionNumber() >= TOTAL_QUESTIONS){
-          setFeedback("ok", `<b>Starting Chamber cleared!</b> Press <b>Open Door</b>.`);
+          setFeedback("ok", `<b>Starting Chamber cleared!</b> The door will open now.`);
+          scheduleFirstDoorAutoOpen();
         }else if(quiz.questionInStage >= QUESTIONS_PER_STAGE){
           setFeedback("ok", `<b>Stage ${quiz.stageIndex + 1} cleared!</b> Press <b>Next Question</b> to open the first stone door.`);
         }else{
