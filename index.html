@@ -3374,7 +3374,6 @@ const wrap = document.getElementById("gameWrap");
     let doorCinematicActive = false;
     let pendingFloorRestoreAfterDoorView = false;
     let firstDoorAutoOpenScheduled = false;
-    let firstDoorOpeningInProgress = false;
     var TORCH_TOTAL = 6;
 
     const DOOR_OPEN_SOUND_URL = "https://raw.githubusercontent.com/limkimsze-maker/P3-Uncle-Joe-and-the-Key-of-Product/976802ad774b985452e6b06c9945e6378bcd1822/krnbeatz-tectonic-passage-418836.mp3";
@@ -3597,7 +3596,6 @@ const wrap = document.getElementById("gameWrap");
       } = opts;
 
       // Mark cinematic immediately. Do not wait for requestAnimationFrame.
-      // This prevents Ruby/door helpers from forcing the door fully open before pupils see it move.
       doorCinematicActive = true;
 
       if(!door || !door.mesh){
@@ -3614,7 +3612,6 @@ const wrap = document.getElementById("gameWrap");
         if(blocker) blocker.active = false;
 
         // Stable floor-level door-opening view.
-        // No high camera, no side screenshot view, no page-scroll state.
         const viewX = Number.isFinite(opts.viewX) ? opts.viewX : 0;
         const viewZ = Number.isFinite(cameraZ) ? cameraZ : (doorZ + 3.8);
         const viewY = 1.65;
@@ -3629,21 +3626,46 @@ const wrap = document.getElementById("gameWrap");
 
         const closedY = 1.9;
         const openY = 8.8;
-        const startY = Math.min(door.mesh.position.y || closedY, closedY);
-        door.mesh.position.y = startY;
+        const startY = closedY;
+
+        // Force the real door to start CLOSED for the cinematic.
+        door.mesh.visible = true;
+        door.mesh.position.y = closedY;
+
+        // Temporary visible slab, used especially for the first door so the pupil clearly
+        // sees "closed -> moving up -> open" even if labels/skins are in front of the wall.
+        let movingDoorOverlay = null;
+        if(opts.visibleDoorOverlay){
+          const overlayMat = new THREE.MeshBasicMaterial({
+            color:0x7b5732,
+            side:THREE.DoubleSide,
+            depthWrite:true,
+            depthTest:true
+          });
+          movingDoorOverlay = new THREE.Mesh(new THREE.BoxGeometry(14.8,3.65,.20), overlayMat);
+          movingDoorOverlay.position.set(0,closedY,doorZ + .48);
+          movingDoorOverlay.renderOrder = 250;
+          scene.add(movingDoorOverlay);
+        }
 
         const begin = performance.now();
-        const duration = 4950; // current slow speed retained
+        const duration = Number(opts.durationMs || 4950);
 
-        function easeOutCubic(t){
-          return 1 - Math.pow(1 - t, 3);
+        function easeInOut(t){
+          return t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2;
         }
 
         function step(now){
           const t = Math.min(1, (now - begin) / duration);
-          const eased = easeOutCubic(t);
+          const eased = easeInOut(t);
+          const y = startY + (openY - startY) * eased;
 
-          door.mesh.position.y = startY + (openY - startY) * eased;
+          door.mesh.position.y = y;
+          if(movingDoorOverlay) movingDoorOverlay.position.y = y;
+          if(door === window.firstDoor && window.firstDoorLabel){
+            window.firstDoorLabel.position.y = Math.min(8.8, 1.85 + (8.8 - 1.85) * eased);
+          }
+
           camera.position.set(viewX, viewY, viewZ);
           faceCameraAt(0, targetY, doorZ);
 
@@ -3651,6 +3673,12 @@ const wrap = document.getElementById("gameWrap");
             requestAnimationFrame(step);
           }else{
             door.mesh.position.y = openY;
+            if(window.firstDoorLabel && door === window.firstDoor) window.firstDoorLabel.position.y = openY;
+            if(movingDoorOverlay){
+              scene.remove(movingDoorOverlay);
+              if(movingDoorOverlay.geometry) movingDoorOverlay.geometry.dispose?.();
+              if(movingDoorOverlay.material) movingDoorOverlay.material.dispose?.();
+            }
             stopDoorOpeningSound();
             door.active = false;
             if(blocker) blocker.active = false;
@@ -6982,22 +7010,45 @@ function openPuzzle(){
     }
 
     function openDoor(){
-      if(doorOpen) return;
+      if(doorOpen || firstDoorOpeningInProgress) return;
+
+      // Sequence lock: first door moves up first. Ruby appears only after the movement completes.
       firstDoorOpeningInProgress = true;
-      doorOpen = true;
+      rubyVisible = false;
+      rubySystemPretendCollected = false;
+      if(window.rubyObj) window.rubyObj.group.visible = false;
+
+      if(window.firstDoor){
+        window.firstDoor.active = false;
+        if(window.firstDoor.mesh){
+          window.firstDoor.mesh.visible = true;
+          window.firstDoor.mesh.position.y = 1.9;
+        }
+      }
+      if(window.firstDoorLabel) window.firstDoorLabel.position.y = 1.85;
       if(window.firstDoorBlocker) window.firstDoorBlocker.active = false;
-      syncDoorBlockers();
 
       showDoorOpeningScene({
         door: window.firstDoor,
         blocker: window.firstDoorBlocker,
         doorZ: -7.72,
-        cameraZ: -2.6,
+        cameraZ: -2.35,
         viewX: 0,
+        durationMs: 2000,
+        visibleDoorOverlay: true,
         restoreAfterOpen: {x:0, z:-6.9, ry:0},
         message: "Watch carefully... the door is opening!",
         onComplete: ()=>{
           firstDoorOpeningInProgress = false;
+          doorOpen = true;
+
+          if(window.firstDoor){
+            window.firstDoor.active = false;
+            if(window.firstDoor.mesh) window.firstDoor.mesh.position.y = 8.8;
+          }
+          if(window.firstDoorLabel) window.firstDoorLabel.position.y = 8.8;
+          if(window.firstDoorBlocker) window.firstDoorBlocker.active = false;
+
           rubyVisible = true;
           refreshVisualStateBeforeRubyCollection();
           ensureRubyVisibleBeforeCollected();
